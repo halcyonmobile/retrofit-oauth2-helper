@@ -1,0 +1,5 @@
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    package="com.halcyonmobile.oauthsecurestoragecompat">
+
+    <uses-sdk tools:overrideLibrary="com.halcyonmobile.oauthsecurestorage, androidx.security" />
+</manifest>

@@ -1,0 +1,9 @@
+{
+  "access_token": "best-token",
+  "token_type": "bearer",
+  "refresh_token": "new-refresh-token",
+  "expires_in": 299,
+  "scope": "trust",
+  "user_id": "user-id",
+  "jti": "82015e11-da47-4fb9-aa0a-6b518f402ed7"
+}

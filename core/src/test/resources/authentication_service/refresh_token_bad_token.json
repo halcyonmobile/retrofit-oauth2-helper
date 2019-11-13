@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "message": "Bad Request",
+  "timestamp": "2019-04-04T09:37:35.608516Z",
+  "errors": [
+    {
+      "code": "invalid_request",
+      "errorMessage": "Invalid refresh token: the_value_of_refresh_token"
+    }
+  ]
+}

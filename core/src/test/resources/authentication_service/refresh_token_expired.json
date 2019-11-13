@@ -1,0 +1,11 @@
+{
+  "status": 401,
+  "message": "Unauthorized",
+  "timestamp": "2019-04-10T08:53:07.353967Z",
+  "errors": [
+    {
+      "code": "invalid_request",
+      "errorMessage": "Invalid refresh token (expired): <the_value_of_refresh_token>"
+    }
+  ]
+}
