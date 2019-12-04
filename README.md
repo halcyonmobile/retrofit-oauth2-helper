@@ -62,80 +62,15 @@ To see the behaviour in action may refer to [com.halcyonmobile.core.Authenticati
 
 ### General Idea
 
+- You will see a "core" and "app" module, this is specific to our architecture, the core means a module which does the business logic, network requests etc, it's a java module while the app module is handling the ui and other platform specific implementation details.
 - The idea is that in your core module you will do the configuration and get the created retrofit instances 
-so it will depend on either the oauth or oauthkoin or some other variant
+so it will depend on either the oauth or oauthkoin, oauthmoshi or some other variant
 - However the core module won't be able to contain all the needed dependencies, because of that you should use the 
 oauthdependencies in your app module so you can provide the storage and session expiration handler.
 - Optionally you can use the oauthstorage in your app to reduce the shared preferences boilerplate.
 - Optionally you can use the oauthadaptergenerator in your core where you define the refresh token retrofit service, so 
 you don't need to write your adapter if it's simple.
 - Note: oauth-moshi, oauth-koin do not need adapters, they already contain a refresh service.
-
-### Koin with moshi
-
-#### core module
-If you are using koin with moshi what you need to do is add the dependency in your build.gradle of your core module
-
-```groovy
-implementation "com.halcyonmobile.oauth-setup:oauth-setup-moshi-koin:latest-version"
-```
-
-Then add the module to your other core modules, the setup will look something like this:
-```kotlin
-fun createNetworkModules(
-    clientId: String,
-    baseUrl: String,
-    provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
-): List<Module> {
-    return listOf(
-    // your own custom module,
-        module {
-            factory { get<Retrofit>(SESSION_RETROFIT).create(SessionExampleService::class.java) }
-            factory { get<Retrofit>(NON_SESSION_RETROFIT).create(SessionlessExampleService::class.java) }
-            factory { ExampleRemoteSource(get(), get()) }
-        },
-        // this returns a koin module. here you can customize the setup.
-        createOauthModule(
-            clientId = clientId,
-            provideSessionExpiredEventHandler = provideSessionExpiredEventHandler,
-            provideAuthenticationLocalStorage = provideAuthenticationLocalStorage,
-            configureRetrofit = {
-                it.baseUrl(baseUrl)
-            }
-        )
-    )
-}
-```
-
-#### app module
-If you want to save your session in shared preferences may use oauthstorage, in this case:
-in your build.gradle of your app module add the following dependency:
-```groovy
-implementation "com.halcyonmobile.oauth-setup:oauth-setup-storage:latest-version"
-```
-
-Extend your shared preferences manager from the AuthenticationSharedPreferencesStorage
-```kotlin
-class SharedPreferenceManager(private val sharedPreferences: SharedPreferences) : AuthenticationSharedPreferencesStorage(sharedPreferences),
-```
-
-Implement the com.halcyonmobile.oauth.depencencies.SessionExpiredEventHandler.
-And tie the setup together such as:
-```kotlin
-fun createAllModules(baseUrl: String, clientId: String): List<Module> {
-    return listOf(createAppModule(omegaApplication))
-    .plus(createNetworkModules(
-        baseUrl = baseUrl,
-        clientId = clientId,
-        provideAuthenticationLocalStorage = { get<SharedPreferenceManager>() },
-        provideSessionExpiredEventHandler = { get<SessionExpiredEventHandlerImpl>() }
-    ))
-}
-```
-
-Note: if you are not saving your session into shared preferences, instead of 'oauth-setup-storage' dependency, use 'oauth-setup-dependencies'. 
-You implement the AuthenticationLocalStorage interface with your solution and add it to your createNetworkModule setup instead of SharedPreferencesManager.
 
 ### Oauth-moshi setup
 If you are using moshi and some other dependency injection framework than koin what you need to do is add the dependency in your build.gradle of your core module
@@ -183,7 +118,64 @@ fun createNetworkModules(
 
 #### app module
 
-Same as oauth-moshi-koin setup, please check that one out.
+If you want to save your session in shared preferences may use oauthstorage, in this case:
+in your build.gradle of your app module add the following dependency:
+```groovy
+implementation "com.halcyonmobile.oauth-setup:oauth-setup-storage:latest-version"
+```
+
+Extend your shared preferences manager from the AuthenticationSharedPreferencesStorage
+```kotlin
+class SharedPreferenceManager(private val sharedPreferences: SharedPreferences) : AuthenticationSharedPreferencesStorage(sharedPreferences),
+```
+
+Implement the com.halcyonmobile.oauth.depencencies.SessionExpiredEventHandler.
+And tie the setup together such as:
+```kotlin
+fun createAllModules(baseUrl: String, clientId: String): List<Module> {
+    return listOf(createAppModule(omegaApplication))
+    .plus(createNetworkModules(
+        baseUrl = baseUrl,
+        clientId = clientId,
+        provideAuthenticationLocalStorage = { get<SharedPreferenceManager>() },
+        provideSessionExpiredEventHandler = { get<SessionExpiredEventHandlerImpl>() }
+    ))
+}
+```
+
+Note: if you are not saving your session into shared preferences, instead of 'oauth-setup-storage' dependency, use 'oauth-setup-dependencies'.
+You implement the AuthenticationLocalStorage interface with your solution and add it to your createNetworkModule setup instead of SharedPreferencesManager.
+
+#### LOGIN and SIGNUP requests
+For your login and signup requests, you still have to save the session yourself into your storage.
+The easiest solution is return the same session type, inject the AuthenticationLocalStorage and simply call save on it.
+
+Note: There is an idea with call adapter which would save your session automatically, but it's not yet implemented.
+Feel free to ping me if you are interested in this.
+
+#### I have a request which contains the access / refresh token, What can I do?
+
+For this there is a specific header which when attached after authentication is finished successfully a specific exception is thrown so you can rerun your request with the updated content.
+
+```kotlin
+@GET("test/service")
+fun authInvalidTest(
+    @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader : String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
+) : Call<Unit>
+// throws authFinishedInvalidationException, which is an IOException after authentication happened
+```
+
+How to handle the exception:
+```kotlin
+    fun foo(){
+        runCatchingCausedByAuthFinishedInvalidation({
+            service.authInvalidTest()
+        }, {
+            // authentication happened, the storage is updated
+            // do something, like retrying the request with updated body
+        })
+    }
+```
 
 ### Oauth-gson setup
 If you are using moshi and some other dependency injection framework than koin what you need to do is add the dependency in your build.gradle of your core module
@@ -231,7 +223,47 @@ fun createNetworkModules(
 
 #### app module
 
-Same as oauth-moshi-koin setup, please check that one out.
+Same as Oauth-moshi setup, please check that one out.
+
+### Koin with moshi
+
+#### core module
+If you are using koin with moshi what you need to do is add the dependency in your build.gradle of your core module
+
+```groovy
+implementation "com.halcyonmobile.oauth-setup:oauth-setup-moshi-koin:latest-version"
+```
+
+Then add the module to your other core modules, the setup will look something like this:
+```kotlin
+fun createNetworkModules(
+    clientId: String,
+    baseUrl: String,
+    provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+): List<Module> {
+    return listOf(
+    // your own custom module,
+        module {
+            factory { get<Retrofit>(SESSION_RETROFIT).create(SessionExampleService::class.java) }
+            factory { get<Retrofit>(NON_SESSION_RETROFIT).create(SessionlessExampleService::class.java) }
+            factory { ExampleRemoteSource(get(), get()) }
+        },
+        // this returns a koin module. here you can customize the setup.
+        createOauthModule(
+            clientId = clientId,
+            provideSessionExpiredEventHandler = provideSessionExpiredEventHandler,
+            provideAuthenticationLocalStorage = provideAuthenticationLocalStorage,
+            configureRetrofit = {
+                it.baseUrl(baseUrl)
+            }
+        )
+    )
+}
+```
+
+#### app module
+Same as Oauth-moshi setup, please check that one out.
 
 ### Using Only oauth setup
 If none of the other setups are applicable, you are not using moshi then you can fallback to this, however i would suggest to add a new module with your implementation instead.
@@ -328,40 +360,6 @@ fun createNetworkModules(
 #### app module
 
 Same as oauth-moshi-koin setup, please check that one out.
-
-#### LOGIN and SIGNUP requests
-For your login and signup requests, you still have to save the session yourself into your storage.
-The easiest solution is return the same session type, inject the AuthenticationLocalStorage and simply call save on it.
-
-Note: There is an idea with call adapter which would save your session automatically, but it's not yet implemented.
-Feel free to ping me if you are interested in this.
-
-#### I have a request which contains the access / refresh token, What can I do?
-
-For this there is a specific header which when attached after authentication is finished successfully a specific exception is thrown so you can rerun your request with the updated content.
-
-```kotlin
-@GET("test/service")
-fun authInvalidTest(
-    @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader : String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
-) : Call<Unit>
-// throws authFinishedInvalidationException, which is an IOException after authentication happened
-```
-
-How to handle the exception:
-```kotlin
-    fun foo(){
-        runCatchingCausedByAuthFinishedInvalidation({
-            service.authInvalidTest()
-        }, {
-            // authentication happened, the storage is updated
-            // do something, like retrying the request with updated body
-        })
-    }
-```
-
-### Other setups: 
--- coming soon
 
 ### Configurations:
 
