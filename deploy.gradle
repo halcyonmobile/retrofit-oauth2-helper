@@ -7,4 +7,4 @@
 
 ext.libraryGroupId = 'oauth-setup'
 ext.libraryVersion = '0.1.0.14'
-ext.bintray_source_url = "https://github.com/halcyonmobiledev/retrofit-oauth2-helper"
+ext.bintray_source_url = "https://github.com/halcyonmobile/retrofit-oauth2-helper"
