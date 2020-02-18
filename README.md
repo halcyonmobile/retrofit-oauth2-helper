@@ -56,7 +56,7 @@ To see the behaviour in action may refer to [com.halcyonmobile.core.Authenticati
  
 ## Setup
 - This contains how you can use this library
-- Latest version: 0.1.0.13
+- Latest version: 1.0.0
 
 ### Make sure jcenter is added
 

@@ -6,5 +6,5 @@
 // # 3 bintray: make sure you add the published library to jcenter on the site
 
 ext.libraryGroupId = 'oauth-setup'
-ext.libraryVersion = '0.1.0.14'
+ext.libraryVersion = '1.0.0'
 ext.bintray_source_url = "https://github.com/halcyonmobile/retrofit-oauth2-helper"
