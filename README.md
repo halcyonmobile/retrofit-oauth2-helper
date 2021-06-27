@@ -27,7 +27,7 @@ When you get the tokens you get two kinds: access token and refresh token:
 - The refresh token is used to get a new access token.
 
  
-When the refresh token expires you will get 401 Unauthorized from the server, at this point you will need to call a request with the refresh token, from that request you will get a new access and refresh token.
+When the access token expires you will get 401 Unauthorized from the server, at this point you will need to call a request with the refresh token, from that request you will get a new access and refresh token.
 
  
 With retrofit there is a class Authenticator which is triggered on a background thread when your request fails with 401.
