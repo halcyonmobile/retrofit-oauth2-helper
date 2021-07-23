@@ -53,4 +53,4 @@ repositories {
 }
 
 project.ext.set("libraryArtifactId", "oauth-setup-secure-storage-compat")
-apply plugin: 'com.halcyonmobile.plugin.publish.artifactory.aar-library'
+apply plugin: 'com.halcyonmobile.plugin.publish.custom.aar-library'

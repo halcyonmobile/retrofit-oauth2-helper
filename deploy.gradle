@@ -1,10 +1,6 @@
 // RELEASING
-// # 0:              update the libraryVersion
-// # 1:              open terminal and run the following commands
-// # 2 artifactory:  ./gradlew publishToArtifactory
-// # 2 bintray:      ./gradlew publishToBintray
-// # 3 bintray: make sure you add the published library to jcenter on the site
+// ./gradlew howToPublish
 
 ext.libraryGroupId = 'oauth-setup'
-ext.libraryVersion = '1.0.0'
-ext.bintray_source_url = "https://github.com/halcyonmobile/retrofit-oauth2-helper"
+ext.libraryVersion = '1.0.1'
+ext.githubPackagePath = 'halcyonmobile/retrofit-oauth2-helper'
