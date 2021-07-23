@@ -5,6 +5,10 @@ on:
     branches:
       - develop
 
+env:
+  GITHUB_USERNAME: "halcyonmobile"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
