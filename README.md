@@ -56,9 +56,28 @@ To see the behaviour in action may refer to [com.halcyonmobile.core.Authenticati
  
 ## Setup
 - This contains how you can use this library
-- Latest version: 1.0.0
+- *Latest version:* ![Latest release](https://img.shields.io/github/v/release/halcyonmobile/retrofit-oauth2-helper)
 
-### Make sure jcenter is added
+## Ensure you have the HalcyonMobile GitHub Packages as a repository
+
+```gradle
+// top level build.gradle
+{
+allprojects {
+    repositories {
+        // ...
+        maven {
+            url "https://maven.pkg.github.com/halcyonmobile/android-common-extensions"
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+```
+
+Note: you only need one maven declaration with "halcyonmobile/{specific}", every other package will be accessable.
 
 ### General Idea
 
