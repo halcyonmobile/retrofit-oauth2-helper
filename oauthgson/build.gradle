@@ -8,7 +8,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    api 'com.google.code.gson:gson:2.8.5'
+    api 'com.google.code.gson:gson:2.8.7'
     implementation'com.squareup.retrofit2:converter-gson:2.3.0'
     api project(':oauthparsing')
 
