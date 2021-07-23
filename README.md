@@ -62,7 +62,7 @@ To see the behaviour in action may refer to [com.halcyonmobile.core.Authenticati
 
 ```gradle
 // top level build.gradle
-{
+//..
 allprojects {
     repositories {
         // ...
