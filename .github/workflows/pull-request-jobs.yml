@@ -23,6 +23,6 @@ jobs:
           distribution: 'adopt'
           java-version: '11'
       - name: Run Android Unit Tests
-        run: ./gradlew core:test
+        run: ./gradlew testReleaseUnit
       - name: Run Core Unit Tests
         run: ./gradlew core:test
