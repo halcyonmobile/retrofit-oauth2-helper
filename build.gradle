@@ -5,6 +5,13 @@ buildscript {
     repositories {
         google()
         jcenter()
+        maven {
+            url "https://maven.pkg.github.com/halcyonmobile/halcyon-custom-gradle-publish-plugin"
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.2'
@@ -14,7 +21,7 @@ buildscript {
 
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.7.3"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        classpath 'com.halcyonmobile.publish.artifactory-bintray:java-and-aar:0.1.0.3'
+        classpath 'com.halcyonmobile.publish.custom:java-and-aar:2.0.1'
     }
 }
 

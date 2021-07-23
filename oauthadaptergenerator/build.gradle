@@ -22,4 +22,4 @@ compileTestKotlin {
 }
 
 project.ext.set("libraryArtifactId", "oauth-adapter-generator")
-apply plugin: 'com.halcyonmobile.plugin.publish.artifactory.jar-library'
+apply plugin: 'com.halcyonmobile.plugin.publish.custom.jar-library'

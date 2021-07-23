@@ -1,0 +1,26 @@
+name: Library Package Publishing
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  publish-library:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+      - name: Assemble project
+        env:
+          GITHUB_USERNAME: "halcyonmobile"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publish
