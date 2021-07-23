@@ -39,7 +39,7 @@ dependencies {
     api  ("com.squareup.okhttp3:okhttp:$okHttpVersion") {
         exclude module: 'okio'
     }
-    def retrofitVersion = "2.6.0"
+    def retrofitVersion = "2.9.0"
     api ("com.squareup.retrofit2:retrofit:$retrofitVersion") {
         exclude module: 'okhttp'
     }
