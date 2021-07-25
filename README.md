@@ -72,13 +72,13 @@ allprojects {
                 username = project.findProperty("GITHUB_USERNAME") ?: System.getenv("GITHUB_USERNAME")
                 password = project.findProperty("GITHUB_TOKEN") ?: System.getenv("GITHUB_TOKEN")
             }
-            //https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token
+            // https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token
         }
     }
 }
 ```
 
-Note: you only need one maven declaration with "halcyonmobile/{specific}", every other package will be accessable.
+Note: you only need one maven declaration with "halcyonmobile/{specific}", every other package will be accessible.
 
 ### General Idea
 
