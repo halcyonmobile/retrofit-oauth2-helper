@@ -8,8 +8,8 @@ buildscript {
         maven {
             url "https://maven.pkg.github.com/halcyonmobile/halcyon-custom-gradle-publish-plugin"
             credentials {
-                username = System.getenv("GITHUB_USERNAME")
-                password = System.getenv("GITHUB_TOKEN")
+                username = project.findProperty("GITHUB_USERNAME") ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("GITHUB_TOKEN") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
