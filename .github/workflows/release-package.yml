@@ -23,4 +23,4 @@ jobs:
         env:
           GITHUB_USERNAME: "halcyonmobile"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew publish
+        run: ./gradlew publishToGitHub
