@@ -76,6 +76,22 @@ allprojects {
         }
     }
 }
+// OR
+// top level build.gradle.kts
+//..
+allprojects {
+    repositories {
+        // ...
+        maven {
+            url = uri("https://maven.pkg.github.com/halcyonmobile/retrofit-oauth2-helper")
+            credentials {
+                username = extra.properties["GITHUB_USERNAME"] as String? ?: System.getenv("GITHUB_USERNAME")
+                password = extra.properties["GITHUB_TOKEN"] as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+            // https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token
+        }
+    }
+} 
 ```
 
 Note: you only need one maven declaration with "halcyonmobile/{specific}", every other package will be accessible.
