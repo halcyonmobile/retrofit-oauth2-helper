@@ -7,8 +7,8 @@ apply plugin: 'maven-publish'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    api 'com.google.code.gson:gson:2.8.5'
-    implementation'com.squareup.retrofit2:converter-gson:2.3.0'
+    api "com.google.code.gson:gson:$gsonVersion"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
     api project(':oauthparsing')
 
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"

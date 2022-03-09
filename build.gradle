@@ -3,9 +3,10 @@ buildscript {
         minSdkVersion = 21
         compileSdkVersion = 32
         jvmTarget = "1.8"
+        gsonVersion = "2.8.9"
         moshiVersion = "1.13.0"
         retrofitVersion = "2.9.0"
-        okHttpVersion = "3.12.0"
+        okHttpVersion = "4.9.3"
     }
     repositories {
         google()

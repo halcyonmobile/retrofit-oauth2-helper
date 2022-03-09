@@ -27,7 +27,7 @@ internal class ClientIdParameterInterceptor(private val clientId: String) : Inte
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
 
-        val url = original.url().newBuilder()
+        val url = original.url.newBuilder()
             .addQueryParameter("client_id", clientId)
             .addQueryParameter("clientId", clientId)
             .build()
