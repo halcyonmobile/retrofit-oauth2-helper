@@ -5,12 +5,12 @@ apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.compileSdkVersion
 
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.compileSdkVersion
         versionCode 1
         versionName "1.0"
 
@@ -34,7 +34,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 repositories {
     mavenCentral()
@@ -42,3 +41,6 @@ repositories {
 
 project.ext.set("libraryArtifactId", "oauth-setup-storage")
 apply plugin: 'com.halcyonmobile.plugin.publish.custom.aar-library'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8

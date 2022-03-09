@@ -5,21 +5,23 @@ apply plugin: 'maven-publish'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation "com.squareup:kotlinpoet:1.0.0"
     implementation project(':oauthdependencies')
 }
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.6"
+        jvmTarget = project.jvmTarget
     }
 }
 compileTestKotlin {
     kotlinOptions {
-        jvmTarget = "1.6"
+        jvmTarget = project.jvmTarget
     }
 }
 
 project.ext.set("libraryArtifactId", "oauth-adapter-generator")
 apply plugin: 'com.halcyonmobile.plugin.publish.custom.jar-library'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8

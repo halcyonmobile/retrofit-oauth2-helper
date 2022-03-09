@@ -1,0 +1,14 @@
+include(
+    ":app",
+    ":core",
+    ":oauth",
+    ":oauthdependencies",
+    ":oauthstorage",
+    ":oauthadaptergenerator",
+    ":oauthmoshi",
+    ":oauthmoshikoin",
+    ":oauthgson",
+    ":oauthparsing",
+    ":oauthsecurestorage",
+    ":oauthsecurestoragecompat"
+)
