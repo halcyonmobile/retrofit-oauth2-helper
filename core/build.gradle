@@ -7,7 +7,7 @@ dependencies {
     implementation "com.squareup.moshi:moshi:$moshiVersion"
     kapt "com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion"
 
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
 // ouath-moshi-koin dependency
     implementation(project(':oauthmoshikoin'))
 
@@ -24,18 +24,15 @@ dependencies {
     testImplementation ("com.squareup.okhttp3:mockwebserver:$okHttpVersion") {
         exclude module: 'okhttp'
     }
-    implementation 'junit:junit:4.12'
+    implementation "junit:junit:$junitVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
-    implementation ("com.squareup.okhttp3:logging-interceptor:3.12.0") {
+    implementation ("com.squareup.okhttp3:logging-interceptor:$okHttpVersion") {
         exclude module: 'okhttp'
     }
 }
 
 sourceSets {
     main.java.srcDirs += 'build/generated/source/kaptKotlin'
-}
-repositories {
-    mavenCentral()
 }
 compileKotlin {
     kotlinOptions {

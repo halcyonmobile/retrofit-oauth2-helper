@@ -9,10 +9,6 @@ dependencies {
 
     api project(':oauth')
 }
-
-repositories {
-    mavenCentral()
-}
 compileKotlin {
     kotlinOptions {
         jvmTarget = project.jvmTarget

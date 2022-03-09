@@ -6,10 +6,6 @@ apply plugin: 'maven-publish'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
-
-repositories {
-    mavenCentral()
-}
 compileKotlin {
     kotlinOptions {
         jvmTarget = project.jvmTarget
@@ -21,8 +17,8 @@ compileTestKotlin {
     }
 }
 dependencies {
-    implementation "androidx.annotation:annotation:1.1.0"
-    implementation "com.squareup.okio:okio:1.16.0"
+    implementation "androidx.annotation:annotation:$annotationVersion"
+    implementation "com.squareup.okio:okio:$okioVersion"
     api  ("com.squareup.okhttp3:okhttp:$okHttpVersion") {
         exclude module: 'okio'
     }

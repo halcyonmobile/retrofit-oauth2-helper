@@ -7,12 +7,9 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     api project(':oauthmoshi')
-    api "org.koin:koin-core:2.0.1"
+    api "io.insert-koin:koin-core:$koinVersion"
 }
 
-repositories {
-    mavenCentral()
-}
 compileKotlin {
     kotlinOptions {
         jvmTarget = project.jvmTarget

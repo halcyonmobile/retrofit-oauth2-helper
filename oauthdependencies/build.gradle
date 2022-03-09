@@ -6,10 +6,6 @@ apply plugin: 'maven-publish'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
-
-repositories {
-    mavenCentral()
-}
 compileKotlin {
     kotlinOptions {
         jvmTarget = project.jvmTarget
@@ -22,7 +18,7 @@ compileTestKotlin {
 }
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "androidx.annotation:annotation:1.1.0"
+    implementation "androidx.annotation:annotation:$annotationVersion"
 }
 
 project.ext.set("libraryArtifactId", "oauth-setup-dependencies")

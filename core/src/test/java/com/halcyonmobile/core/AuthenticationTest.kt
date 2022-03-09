@@ -189,16 +189,16 @@ class AuthenticationTest {
 
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest.body.readUtf8())
         assertEquals("POST", authRequest.method)
-        assertEquals("/${path}oauth/token", authRequest.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest2.body.readUtf8())
         assertEquals("POST", authRequest2.method)
-        assertEquals("/${path}oauth/token", authRequest2.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest2.requestUrl?.encodedPath)
         verify(mockAuthenticationLocalStorage, times(0)).clear()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, retriedRequest.requestUrl)
         assertEquals(
-                firstRequest.headers.toMultimap().apply { remove("Authorization") },
-                retriedRequest.headers.toMultimap().apply { remove("Authorization") }
+                firstRequest.headers.toMultimap().toMutableMap().apply { remove("Authorization") }.toMap(),
+                retriedRequest.headers.toMultimap().toMutableMap().apply { remove("Authorization") }.toMap()
         )
         assertEquals("bearer best-token", retriedRequest.getHeader("Authorization"))
     }
@@ -220,13 +220,13 @@ class AuthenticationTest {
 
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest1.body.readUtf8())
         assertEquals("POST", authRequest1.method)
-        assertEquals("/${path}oauth/token", authRequest1.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest1.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest2.body.readUtf8())
         assertEquals("POST", authRequest2.method)
-        assertEquals("/${path}oauth/token", authRequest2.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest2.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest3.body.readUtf8())
         assertEquals("POST", authRequest3.method)
-        assertEquals("/${path}oauth/token", authRequest3.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest3.requestUrl?.encodedPath)
         verify(mockAuthenticationLocalStorage, times(0)).clear()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, firstRequest.requestUrl)

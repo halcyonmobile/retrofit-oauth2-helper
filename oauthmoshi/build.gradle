@@ -15,14 +15,10 @@ dependencies {
     }
     kapt "com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion"
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation "junit:junit:$junitVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
-    testImplementation "com.squareup.okhttp3:mockwebserver:3.12.0"
+    testImplementation "com.squareup.okhttp3:mockwebserver:$okHttpVersion"
 }
-repositories {
-    mavenCentral()
-}
-
 compileKotlin {
     kotlinOptions {
         jvmTarget = project.jvmTarget

@@ -81,7 +81,7 @@ class OauthRetrofitWithGsonContainerBuilderTest {
         val refreshRequest = mockWebServer.takeRequest()
 
         Assert.assertEquals("POST", refreshRequest.method)
-        Assert.assertEquals("${basePath}oauth/token", refreshRequest.requestUrl.encodedPath())
+        Assert.assertEquals("${basePath}oauth/token", refreshRequest.requestUrl?.encodedPath)
         Assert.assertEquals(setOf("grant_type=refresh_token", "refresh_token=alma"), refreshRequest.body.readString(Charsets.UTF_8).split("&").toSet())
         verifyZeroInteractions(mockSessionExpiredEventHandler)
     }
@@ -125,7 +125,7 @@ class OauthRetrofitWithGsonContainerBuilderTest {
         val originalRequests = mockWebServer.takeRequest()
         val refreshRequest = mockWebServer.takeRequest()
 
-        Assert.assertEquals("${basePath}banan", refreshRequest.requestUrl.encodedPath())
+        Assert.assertEquals("${basePath}banan", refreshRequest.requestUrl?.encodedPath)
     }
 
     @Test
