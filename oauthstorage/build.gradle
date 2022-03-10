@@ -1,16 +1,15 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven-publish'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.compileSdkVersion
 
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.compileSdkVersion
         versionCode 1
         versionName "1.0"
 
@@ -29,16 +28,14 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation "androidx.annotation:annotation:1.1.0"
+    implementation "androidx.annotation:annotation:$annotationVersion"
     api project(':oauthdependencies')
-    testImplementation 'junit:junit:4.12'
+    testImplementation "junit:junit:$junitVersion"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
-repositories {
-    mavenCentral()
-}
-
 project.ext.set("libraryArtifactId", "oauth-setup-storage")
 apply plugin: 'com.halcyonmobile.plugin.publish.custom.aar-library'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8

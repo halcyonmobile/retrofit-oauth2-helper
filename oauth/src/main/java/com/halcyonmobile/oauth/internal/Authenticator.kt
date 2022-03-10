@@ -51,8 +51,8 @@ internal class Authenticator(
     @Throws(IOException::class)
     override fun authenticate(route: Route?, response: Response): Request? {
         synchronized(this) {
-            if (!setAuthorizationHeader.isSame(response.request())) {
-                return setAuthorizationHeader(response.request())
+            if (!setAuthorizationHeader.isSame(response.request)) {
+                return setAuthorizationHeader(response.request)
             } else if (authenticationLocalStorage.refreshToken.isEmpty()) {
                 return null
             }
@@ -65,12 +65,12 @@ internal class Authenticator(
                         authenticationLocalStorage.save(sessionDataResponse)
 
                         // throw exception since the header is present
-                        if (response.request().header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) == INVALIDATION_AFTER_REFRESH_HEADER_VALUE){
+                        if (response.request.header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) == INVALIDATION_AFTER_REFRESH_HEADER_VALUE){
                             throw authFinishedInvalidationException
                         }
 
                         // retry request with the new tokens
-                        return setAuthorizationHeader(response.request())
+                        return setAuthorizationHeader(response.request)
                     } else {
                         throw HttpException(refreshTokenResponse)
                     }

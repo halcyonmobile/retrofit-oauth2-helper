@@ -35,6 +35,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -189,17 +190,17 @@ class AuthenticationTest {
 
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest.body.readUtf8())
         assertEquals("POST", authRequest.method)
-        assertEquals("/${path}oauth/token", authRequest.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest2.body.readUtf8())
         assertEquals("POST", authRequest2.method)
-        assertEquals("/${path}oauth/token", authRequest2.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest2.requestUrl?.encodedPath)
         verify(mockAuthenticationLocalStorage, times(0)).clear()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, retriedRequest.requestUrl)
-        assertEquals(
-                firstRequest.headers.toMultimap().apply { remove("Authorization") },
-                retriedRequest.headers.toMultimap().apply { remove("Authorization") }
-        )
+
+        fun RecordedRequest.toHeadersWithoutAuthorization() = headers.toMultimap().filterNot { it.key.equals("Authorization", true) }
+
+        assertEquals(firstRequest.toHeadersWithoutAuthorization(), retriedRequest.toHeadersWithoutAuthorization())
         assertEquals("bearer best-token", retriedRequest.getHeader("Authorization"))
     }
 
@@ -220,13 +221,13 @@ class AuthenticationTest {
 
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest1.body.readUtf8())
         assertEquals("POST", authRequest1.method)
-        assertEquals("/${path}oauth/token", authRequest1.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest1.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest2.body.readUtf8())
         assertEquals("POST", authRequest2.method)
-        assertEquals("/${path}oauth/token", authRequest2.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest2.requestUrl?.encodedPath)
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest3.body.readUtf8())
         assertEquals("POST", authRequest3.method)
-        assertEquals("/${path}oauth/token", authRequest3.requestUrl.encodedPath())
+        assertEquals("/${path}oauth/token", authRequest3.requestUrl?.encodedPath)
         verify(mockAuthenticationLocalStorage, times(0)).clear()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, firstRequest.requestUrl)
@@ -297,9 +298,10 @@ class AuthenticationTest {
         /**
          * Reads content of the given [fileName] resource file into a String
          */
-        fun Any.readJsonResourceFileToString(fileName: String): String {
-            val path = this::class.java.classLoader!!.getResource(fileName).toURI().path
-            return Files.lines(Paths.get(path)).collect(Collectors.joining())
+        fun readJsonResourceFileToString(fileName: String): String {
+            val uri =  ClassLoader.getSystemResource(fileName).toURI()
+            val mainPath: String = Paths.get(uri).toString()
+            return Files.lines(Paths.get(mainPath)).collect(Collectors.joining())
         }
     }
 }
