@@ -198,7 +198,7 @@ class AuthenticationTest {
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, retriedRequest.requestUrl)
 
-        fun RecordedRequest.toHeadersWithoutAuthorization() = headers.toMultimap().filterNot { it.key.equals("authorization", true) }
+        fun RecordedRequest.toHeadersWithoutAuthorization() = headers.toMultimap().filterNot { it.key.equals("Authorization", true) }
 
         assertEquals(firstRequest.toHeadersWithoutAuthorization(), retriedRequest.toHeadersWithoutAuthorization())
         assertEquals("bearer best-token", retriedRequest.getHeader("Authorization"))
