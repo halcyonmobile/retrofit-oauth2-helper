@@ -35,6 +35,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -196,10 +197,10 @@ class AuthenticationTest {
         verify(mockAuthenticationLocalStorage, times(0)).clear()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, retriedRequest.requestUrl)
-        assertEquals(
-                firstRequest.headers.toMultimap().toMutableMap().apply { remove("Authorization") }.toMap(),
-                retriedRequest.headers.toMultimap().toMutableMap().apply { remove("Authorization") }.toMap()
-        )
+
+        fun RecordedRequest.toHeadersWithoutAuthorization() = headers.toMultimap().filterNot { it.key.equals("authorization", true) }
+
+        assertEquals(firstRequest.toHeadersWithoutAuthorization(), retriedRequest.toHeadersWithoutAuthorization())
         assertEquals("bearer best-token", retriedRequest.getHeader("Authorization"))
     }
 
@@ -297,9 +298,10 @@ class AuthenticationTest {
         /**
          * Reads content of the given [fileName] resource file into a String
          */
-        fun Any.readJsonResourceFileToString(fileName: String): String {
-            val path = this::class.java.classLoader!!.getResource(fileName).toURI().path
-            return Files.lines(Paths.get(path)).collect(Collectors.joining())
+        fun readJsonResourceFileToString(fileName: String): String {
+            val uri =  ClassLoader.getSystemResource(fileName).toURI()
+            val mainPath: String = Paths.get(uri).toString()
+            return Files.lines(Paths.get(mainPath)).collect(Collectors.joining())
         }
     }
 }
