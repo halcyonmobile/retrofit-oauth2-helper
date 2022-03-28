@@ -11,7 +11,7 @@ buildscript {
         junitVersion = "4.13.2"
         koinVersion = "3.1.5"
         kotlinVersion = "1.6.10"
-        kotlinPoetVersion = "1.10.2"
+        kotlinPoetVersion = "1.11.0"
         moshiVersion = "1.13.0"
         okHttpVersion = "4.9.3"
         okioVersion = "2.10.0"
