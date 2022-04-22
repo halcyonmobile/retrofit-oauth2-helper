@@ -22,6 +22,7 @@ import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 
 /**
  * Builder interface for [OauthRetrofitContainer] which uses a parser as it's [retrofit2.Converter.Factory].
@@ -75,6 +76,12 @@ interface OauthRetrofitWithParserContainerBuilder<T, Parser> {
      * By default a response containing "Invalid refresh token" or "Invalid refresh token (expired):" is considered, see [DefaultIsSessionExpiredException]
      */
     fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: IsSessionExpiredException) : T
+
+    /**
+     * Sets a class which decided what should be considered sessionExpiration.
+     * By default a response containing "Invalid refresh token" or "Invalid refresh token (expired):" is considered, see [DefaultIsSessionExpiredException]
+     */
+    fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: DeprecatedIsSessionExpiredException) : T
 
     /**
      * Disables the default parsing.

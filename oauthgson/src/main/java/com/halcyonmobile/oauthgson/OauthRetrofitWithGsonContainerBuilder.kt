@@ -16,6 +16,7 @@
  */
 package com.halcyonmobile.oauthgson
 
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.halcyonmobile.oauth.OauthRetrofitContainer
@@ -96,7 +97,11 @@ class OauthRetrofitWithGsonContainerBuilder(
         disableDefaultParsing = true
     }
 
-    override fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: IsSessionExpiredException) = apply{
+    override fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: IsSessionExpiredException) = apply {
+        oauthRetrofitContainerBuilder = oauthRetrofitContainerBuilder.setIsSessionExpiredExceptionDecider(isSessionExpiredException)
+    }
+
+    override fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: DeprecatedIsSessionExpiredException) = apply {
         oauthRetrofitContainerBuilder = oauthRetrofitContainerBuilder.setIsSessionExpiredExceptionDecider(isSessionExpiredException)
     }
 

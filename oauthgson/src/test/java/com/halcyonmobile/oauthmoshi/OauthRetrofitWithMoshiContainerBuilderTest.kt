@@ -16,6 +16,7 @@
  */
 package com.halcyonmobile.oauthmoshi
 
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
@@ -160,11 +161,39 @@ class OauthRetrofitWithGsonContainerBuilderTest {
         var caughtHttpException: HttpException? = null
         val service = builder.setIsSessionExpiredExceptionDecider(object : IsSessionExpiredException {
             override fun invoke(throwable: Throwable): Boolean {
-                if (throwable is HttpException) {
-                    caughtHttpException = throwable
-                    return true
-                }
-                return false
+                caughtHttpException = throwable as HttpException
+                return true
+            }
+
+        }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()
+
+        try {
+            service.request().execute()
+        } catch (httpException: HttpException) {
+            Assert.assertEquals(401, httpException.code())
+        }
+
+        Assert.assertEquals(400, caughtHttpException?.code())
+        verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
+        verifyNoMoreInteractions(mockSessionExpiredEventHandler)
+    }
+
+    @Test
+    fun GIVEN_custom_deprecated_session_expiration_exception_decider_WHEN_a_refresh_request_is_run_THEN_the_exception_is_delegated_properly_and_the_decistion_is_respected() {
+        whenever(mockAuthenticationLocalStorage.refreshToken).doReturn("alma")
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(401)
+            setBody("")
+        })
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(400)
+            setBody(REFRESH_RESPONSE)
+        })
+        var caughtHttpException: HttpException? = null
+        val service = builder.setIsSessionExpiredExceptionDecider(object : DeprecatedIsSessionExpiredException {
+            override fun invoke(httpException: HttpException): Boolean {
+                caughtHttpException = httpException
+                return true
             }
 
         }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()

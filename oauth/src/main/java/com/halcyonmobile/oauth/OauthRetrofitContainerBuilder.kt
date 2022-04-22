@@ -16,6 +16,7 @@
  */
 package com.halcyonmobile.oauth
 
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
@@ -80,6 +81,14 @@ class OauthRetrofitContainerBuilder<T : Any>(
      */
     fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: IsSessionExpiredException) = apply {
         this.isSessionExpiredException = isSessionExpiredException
+    }
+
+    /**
+     * Sets a class which decided what should be considered sessionExpiration.
+     * By default a response containing "Invalid refresh token" or "Invalid refresh token (expired):" is considered, see [DefaultIsSessionExpiredException]
+     */
+    fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: DeprecatedIsSessionExpiredException) = apply {
+        this.isSessionExpiredException = DeprecatedIsSessionExpiredExceptionAdapter(isSessionExpiredException)
     }
 
     /**
