@@ -18,11 +18,11 @@ package com.halcyonmobile.oauthgson
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.OauthRetrofitContainer
 import com.halcyonmobile.oauth.OauthRetrofitContainerBuilder
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthparsing.AuthenticationServiceAdapterImpl
 import com.halcyonmobile.oauthparsing.OauthRetrofitWithParserContainerBuilder

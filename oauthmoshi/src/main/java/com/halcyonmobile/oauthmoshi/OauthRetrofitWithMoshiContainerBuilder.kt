@@ -16,10 +16,10 @@
  */
 package com.halcyonmobile.oauthmoshi
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.OauthRetrofitContainer
 import com.halcyonmobile.oauth.OauthRetrofitContainerBuilder
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthparsing.AuthenticationServiceAdapterImpl
 import com.halcyonmobile.oauthparsing.OauthRetrofitWithParserContainerBuilder

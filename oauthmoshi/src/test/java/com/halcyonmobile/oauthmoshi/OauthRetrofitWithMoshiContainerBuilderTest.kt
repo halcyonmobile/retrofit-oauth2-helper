@@ -16,9 +16,9 @@
  */
 package com.halcyonmobile.oauthmoshi
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
 import com.nhaarman.mockitokotlin2.doReturn
@@ -158,18 +158,21 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
             setResponseCode(400)
             setBody(REFRESH_RESPONSE)
         })
-        var caughtHttpException : HttpException? = null
+        var caughtHttpException: HttpException? = null
         val service = builder.setIsSessionExpiredExceptionDecider(object : IsSessionExpiredException {
-            override fun invoke(httpException: HttpException): Boolean {
-                caughtHttpException = httpException
-                return true
+            override fun invoke(throwable: Throwable): Boolean {
+                if (throwable is HttpException) {
+                    caughtHttpException = throwable
+                    return true
+                }
+                return false
             }
 
         }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()
 
         try {
             service.request().execute()
-        } catch (httpException: HttpException){
+        } catch (httpException: HttpException) {
             Assert.assertEquals(401, httpException.code())
         }
 
@@ -195,10 +198,10 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
         })
         val service = builder.disableDefaultParsing()
             .configureMoshi {
-                add(object: JsonAdapter<SessionDataResponse>(){
+                add(object : JsonAdapter<SessionDataResponse>() {
                     @FromJson
                     override fun fromJson(reader: JsonReader): SessionDataResponse? =
-                        object: SessionDataResponse{
+                        object : SessionDataResponse {
                             override val userId: String get() = "a"
                             override val token: String get() = "b"
                             override val refreshToken: String get() = "c"
@@ -209,7 +212,7 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
                         }
 
                     @ToJson
-                    override fun toJson(writer: JsonWriter, value: SessionDataResponse?) : Unit = TODO()
+                    override fun toJson(writer: JsonWriter, value: SessionDataResponse?): Unit = TODO()
 
                 })
             }

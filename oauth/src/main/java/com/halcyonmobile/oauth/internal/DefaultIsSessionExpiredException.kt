@@ -16,28 +16,32 @@
  */
 package com.halcyonmobile.oauth.internal
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
-import retrofit2.HttpException
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import java.net.HttpURLConnection
+import retrofit2.HttpException
 
 /**
  * Default implementation of [IsSessionExpiredException].
  *
- * Checks the [HttpException] against to most common session expiration responses.
+ * Checks the [Throwable] against to most common session expiration
+ * responses.
  */
-class DefaultIsSessionExpiredException: IsSessionExpiredException{
-    override fun invoke(httpException: HttpException): Boolean =
-        httpException.isInvalidTokenException() || httpException.isExpiredTokenException()
+class DefaultIsSessionExpiredException : IsSessionExpiredException {
+    override fun invoke(throwable: Throwable): Boolean =
+        when (throwable) {
+            is HttpException -> throwable.isInvalidTokenException() || throwable.isExpiredTokenException()
+            else -> false
+        }
 
     companion object {
-        fun HttpException.isInvalidTokenException() =
+        private fun HttpException.isInvalidTokenException() =
             code() == HttpURLConnection.HTTP_BAD_REQUEST &&
                     errorBodyAsString().contains("\"Invalid refresh token:")
 
-        fun HttpException.isExpiredTokenException() =
+        private fun HttpException.isExpiredTokenException() =
             code() == HttpURLConnection.HTTP_UNAUTHORIZED &&
                     errorBodyAsString().contains("\"Invalid refresh token (expired):")
 
-        fun HttpException.errorBodyAsString() = response()?.errorBody()?.string().orEmpty()
+        private fun HttpException.errorBodyAsString() = response()?.errorBody()?.string().orEmpty()
     }
 }

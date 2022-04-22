@@ -19,9 +19,9 @@ package com.halcyonmobile.oauthmoshi
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
@@ -157,18 +157,21 @@ class OauthRetrofitWithGsonContainerBuilderTest {
             setResponseCode(400)
             setBody(REFRESH_RESPONSE)
         })
-        var caughtHttpException : HttpException? = null
+        var caughtHttpException: HttpException? = null
         val service = builder.setIsSessionExpiredExceptionDecider(object : IsSessionExpiredException {
-            override fun invoke(httpException: HttpException): Boolean {
-                caughtHttpException = httpException
-                return true
+            override fun invoke(throwable: Throwable): Boolean {
+                if (throwable is HttpException) {
+                    caughtHttpException = throwable
+                    return true
+                }
+                return false
             }
 
         }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()
 
         try {
             service.request().execute()
-        } catch (httpException: HttpException){
+        } catch (httpException: HttpException) {
             Assert.assertEquals(401, httpException.code())
         }
 
@@ -194,13 +197,13 @@ class OauthRetrofitWithGsonContainerBuilderTest {
         })
         val service = builder.disableDefaultParsing()
             .configureGson {
-                registerTypeAdapter(SessionDataResponse::class.java, object: TypeAdapter<SessionDataResponse>(){
+                registerTypeAdapter(SessionDataResponse::class.java, object : TypeAdapter<SessionDataResponse>() {
                     override fun write(out: JsonWriter?, value: SessionDataResponse?) {
                         TODO()
                     }
 
                     override fun read(jsonReader: JsonReader): SessionDataResponse =
-                        object: SessionDataResponse{
+                        object : SessionDataResponse {
                             override val userId: String get() = "a"
                             override val token: String get() = "b"
                             override val refreshToken: String get() = "c"

@@ -17,6 +17,7 @@
 package com.halcyonmobile.oauth
 
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.internal.AuthenticationHeaderInterceptor
 import com.halcyonmobile.oauth.internal.Authenticator

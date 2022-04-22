@@ -16,8 +16,8 @@
  */
 package com.halcyonmobile.oauthmoshikoin
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthmoshi.OauthRetrofitContainerWithMoshi
 import com.halcyonmobile.oauthmoshi.OauthRetrofitWithMoshiContainerBuilder

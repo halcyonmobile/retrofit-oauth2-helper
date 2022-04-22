@@ -16,9 +16,9 @@
  */
 package com.halcyonmobile.oauthparsing
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.OauthRetrofitContainer
 import com.halcyonmobile.oauth.SessionDataResponse
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
