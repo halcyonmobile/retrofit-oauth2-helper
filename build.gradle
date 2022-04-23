@@ -42,6 +42,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
         maven {
             url "https://maven.pkg.github.com/halcyonmobile/halcyon-custom-gradle-publish-plugin"
             credentials {

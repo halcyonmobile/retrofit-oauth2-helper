@@ -32,7 +32,7 @@ dependencies {
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
 
     // compatibility
-    testImplementation "com.halcyonmobile.retrofit-error-parsing:retrofit-error-parsing:2.0.0"
+    testImplementation "com.halcyonmobile.retrofit-error-parsing:retrofit-error-parsing:2.0.1"
     // incompatible with error-parsing 2.0.0,
 //    testImplementation "com.halcyonmobile.error-handler:rest:1.0.0"
 }
