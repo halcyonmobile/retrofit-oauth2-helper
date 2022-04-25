@@ -16,10 +16,10 @@
  */
 package com.halcyonmobile.oauthmoshi
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.OauthRetrofitContainer
 import com.halcyonmobile.oauth.OauthRetrofitContainerBuilder
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthparsing.AuthenticationServiceAdapterImpl
 import com.halcyonmobile.oauthparsing.OauthRetrofitWithParserContainerBuilder
@@ -29,6 +29,7 @@ import com.squareup.moshi.Moshi
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 
 /**
  * Builder class for [OauthRetrofitContainer] which uses moshi as it's [retrofit2.Converter.Factory].
@@ -96,6 +97,10 @@ class OauthRetrofitWithMoshiContainerBuilder(
     }
 
     override fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: IsSessionExpiredException) = apply{
+        oauthRetrofitContainerBuilder = oauthRetrofitContainerBuilder.setIsSessionExpiredExceptionDecider(isSessionExpiredException)
+    }
+
+    override fun setIsSessionExpiredExceptionDecider(isSessionExpiredException: DeprecatedIsSessionExpiredException) = apply{
         oauthRetrofitContainerBuilder = oauthRetrofitContainerBuilder.setIsSessionExpiredExceptionDecider(isSessionExpiredException)
     }
 

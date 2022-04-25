@@ -16,12 +16,13 @@
  */
 package com.halcyonmobile.oauthmoshi
 
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
@@ -157,8 +158,39 @@ class OauthRetrofitWithGsonContainerBuilderTest {
             setResponseCode(400)
             setBody(REFRESH_RESPONSE)
         })
-        var caughtHttpException : HttpException? = null
+        var caughtHttpException: HttpException? = null
         val service = builder.setIsSessionExpiredExceptionDecider(object : IsSessionExpiredException {
+            override fun invoke(throwable: Throwable): Boolean {
+                caughtHttpException = throwable as HttpException
+                return true
+            }
+
+        }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()
+
+        try {
+            service.request().execute()
+        } catch (httpException: HttpException) {
+            Assert.assertEquals(401, httpException.code())
+        }
+
+        Assert.assertEquals(400, caughtHttpException?.code())
+        verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
+        verifyNoMoreInteractions(mockSessionExpiredEventHandler)
+    }
+
+    @Test
+    fun GIVEN_custom_deprecated_session_expiration_exception_decider_WHEN_a_refresh_request_is_run_THEN_the_exception_is_delegated_properly_and_the_decistion_is_respected() {
+        whenever(mockAuthenticationLocalStorage.refreshToken).doReturn("alma")
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(401)
+            setBody("")
+        })
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(400)
+            setBody(REFRESH_RESPONSE)
+        })
+        var caughtHttpException: HttpException? = null
+        val service = builder.setIsSessionExpiredExceptionDecider(object : DeprecatedIsSessionExpiredException {
             override fun invoke(httpException: HttpException): Boolean {
                 caughtHttpException = httpException
                 return true
@@ -168,7 +200,7 @@ class OauthRetrofitWithGsonContainerBuilderTest {
 
         try {
             service.request().execute()
-        } catch (httpException: HttpException){
+        } catch (httpException: HttpException) {
             Assert.assertEquals(401, httpException.code())
         }
 
@@ -194,13 +226,13 @@ class OauthRetrofitWithGsonContainerBuilderTest {
         })
         val service = builder.disableDefaultParsing()
             .configureGson {
-                registerTypeAdapter(SessionDataResponse::class.java, object: TypeAdapter<SessionDataResponse>(){
+                registerTypeAdapter(SessionDataResponse::class.java, object : TypeAdapter<SessionDataResponse>() {
                     override fun write(out: JsonWriter?, value: SessionDataResponse?) {
                         TODO()
                     }
 
                     override fun read(jsonReader: JsonReader): SessionDataResponse =
-                        object: SessionDataResponse{
+                        object : SessionDataResponse {
                             override val userId: String get() = "a"
                             override val token: String get() = "b"
                             override val refreshToken: String get() = "c"

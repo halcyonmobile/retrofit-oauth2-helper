@@ -16,9 +16,10 @@
  */
 package com.halcyonmobile.oauthmoshi
 
-import com.halcyonmobile.oauth.IsSessionExpiredException
+import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
 import com.nhaarman.mockitokotlin2.doReturn
@@ -158,8 +159,39 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
             setResponseCode(400)
             setBody(REFRESH_RESPONSE)
         })
-        var caughtHttpException : HttpException? = null
+        var caughtHttpException: HttpException? = null
         val service = builder.setIsSessionExpiredExceptionDecider(object : IsSessionExpiredException {
+            override fun invoke(throwable: Throwable): Boolean {
+                caughtHttpException = throwable as HttpException
+                return true
+            }
+
+        }).build().oauthRetrofitContainer.sessionRetrofit.create<Service>()
+
+        try {
+            service.request().execute()
+        } catch (httpException: HttpException) {
+            Assert.assertEquals(401, httpException.code())
+        }
+
+        Assert.assertEquals(400, caughtHttpException?.code())
+        verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
+        verifyNoMoreInteractions(mockSessionExpiredEventHandler)
+    }
+
+    @Test
+    fun GIVEN_custom_deprecated_session_expiration_exception_decider_WHEN_a_refresh_request_is_run_THEN_the_exception_is_delegated_properly_and_the_decistion_is_respected() {
+        whenever(mockAuthenticationLocalStorage.refreshToken).doReturn("alma")
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(401)
+            setBody("")
+        })
+        mockWebServer.enqueue(MockResponse().apply {
+            setResponseCode(400)
+            setBody(REFRESH_RESPONSE)
+        })
+        var caughtHttpException: HttpException? = null
+        val service = builder.setIsSessionExpiredExceptionDecider(object : DeprecatedIsSessionExpiredException {
             override fun invoke(httpException: HttpException): Boolean {
                 caughtHttpException = httpException
                 return true
@@ -169,7 +201,7 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
 
         try {
             service.request().execute()
-        } catch (httpException: HttpException){
+        } catch (httpException: HttpException) {
             Assert.assertEquals(401, httpException.code())
         }
 
@@ -195,10 +227,10 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
         })
         val service = builder.disableDefaultParsing()
             .configureMoshi {
-                add(object: JsonAdapter<SessionDataResponse>(){
+                add(object : JsonAdapter<SessionDataResponse>() {
                     @FromJson
                     override fun fromJson(reader: JsonReader): SessionDataResponse? =
-                        object: SessionDataResponse{
+                        object : SessionDataResponse {
                             override val userId: String get() = "a"
                             override val token: String get() = "b"
                             override val refreshToken: String get() = "c"
@@ -209,7 +241,7 @@ class OauthRetrofitWithMoshiContainerBuilderTest {
                         }
 
                     @ToJson
-                    override fun toJson(writer: JsonWriter, value: SessionDataResponse?) : Unit = TODO()
+                    override fun toJson(writer: JsonWriter, value: SessionDataResponse?): Unit = TODO()
 
                 })
             }

@@ -19,25 +19,31 @@ package com.halcyonmobile.oauth.internal
 import com.halcyonmobile.oauth.AuthenticationService
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_NAME
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
-import com.halcyonmobile.oauth.IsSessionExpiredException
 import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.authFinishedInvalidationException
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.save
+import java.io.IOException
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
 import retrofit2.HttpException
-import java.io.IOException
 
 /**
- * Synchronized [okhttp3.Authenticator] which refreshes the token when the request response is 401 - Unauthorized.
+ * Synchronized [okhttp3.Authenticator] which refreshes the token when
+ * the request response is 401 - Unauthorized.
  *
- * @param refreshTokenService is used to run the token-refreshing request returning a [SessionDataResponse]
- * @param authenticationLocalStorage the persistent storage for the session [SessionDataResponse]
- * @param setAuthorizationHeader an internal use-case which adds the autorization header to the request based on the stored session.
+ * @param refreshTokenService is used to run the token-refreshing
+ *     request returning a [SessionDataResponse]
+ * @param authenticationLocalStorage the persistent storage for the
+ *     session [SessionDataResponse]
+ * @param setAuthorizationHeader an internal use-case which adds the
+ *     authorization header to the request based on the stored session.
+ * @param isSessionExpiredException the component defining if an
+ *     exception can be considered SessionExpired exception.
  * @param sessionExpiredEventHandler a listener for session expiration.
  */
 internal class Authenticator(
@@ -65,7 +71,7 @@ internal class Authenticator(
                         authenticationLocalStorage.save(sessionDataResponse)
 
                         // throw exception since the header is present
-                        if (response.request.header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) == INVALIDATION_AFTER_REFRESH_HEADER_VALUE){
+                        if (response.request.header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) == INVALIDATION_AFTER_REFRESH_HEADER_VALUE) {
                             throw authFinishedInvalidationException
                         }
 
@@ -75,9 +81,9 @@ internal class Authenticator(
                         throw HttpException(refreshTokenResponse)
                     }
                 } catch (throwable: Throwable) {
-                    when (throwable){
+                    when (throwable) {
                         authFinishedInvalidationException -> throw throwable
-                        is HttpException -> {
+                        else -> {
                             if (isSessionExpiredException(throwable)) {
                                 onSessionExpiration()
                                 return null
@@ -93,10 +99,8 @@ internal class Authenticator(
         }
     }
 
-    /**
-     * On SessionExpiration we clear the data and report the event.
-     */
-    private fun onSessionExpiration(){
+    /** On SessionExpiration we clear the data and report the event. */
+    private fun onSessionExpiration() {
         authenticationLocalStorage.clear()
         sessionExpiredEventHandler.onSessionExpired()
     }

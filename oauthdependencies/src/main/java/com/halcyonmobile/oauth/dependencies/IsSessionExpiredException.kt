@@ -14,22 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.halcyonmobile.oauth
-
-import retrofit2.HttpException
+package com.halcyonmobile.oauth.dependencies
 
 /**
- * Defines what [HttpException] should be considered as SessionExpiration.
+ * Defines what [Throwable] should be considered as SessionExpiration.
  */
-@Deprecated(
-    message = "Deprecated API. Suggestion: replace import.",
-    level = DeprecationLevel.WARNING,
-    replaceWith = ReplaceWith("IsSessionExpiredException", "com.halcyonmobile.oauth.dependencies.IsSessionExpiredException")
-)
 interface IsSessionExpiredException {
 
     /**
-     * @return true if the given [httpException] comming from the refresh-token-request should be considered as SessionExpiration.
+     * @return true if the given [throwable] coming from the
+     *     refresh-token-request should be considered as SessionExpiration.
      */
-    operator fun invoke(httpException: HttpException): Boolean
+    operator fun invoke(throwable: Throwable): Boolean
+
 }
