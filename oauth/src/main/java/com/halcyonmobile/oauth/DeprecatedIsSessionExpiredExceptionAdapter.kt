@@ -8,7 +8,7 @@ internal class DeprecatedIsSessionExpiredExceptionAdapter(
     private val delegate: DeprecatedIsSessionExpiredException
 ) : IsSessionExpiredException {
     override fun invoke(throwable: Throwable): Boolean {
-        val cause = throwable.causeHttpException ?: return false
-        return delegate.invoke(cause)
+        val httpException = throwable.causeHttpException ?: return false
+        return delegate.invoke(httpException)
     }
 }
