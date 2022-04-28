@@ -11,7 +11,7 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
     api project(':oauthparsing')
 
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
     testImplementation "com.squareup.okhttp3:mockwebserver:$okHttpVersion"
 }
 compileKotlin {
