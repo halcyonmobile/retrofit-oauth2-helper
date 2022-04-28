@@ -16,7 +16,7 @@ dependencies {
     kapt "com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion"
 
     testImplementation "junit:junit:$junitVersion"
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
     testImplementation "com.squareup.okhttp3:mockwebserver:$okHttpVersion"
 }
 compileKotlin {
