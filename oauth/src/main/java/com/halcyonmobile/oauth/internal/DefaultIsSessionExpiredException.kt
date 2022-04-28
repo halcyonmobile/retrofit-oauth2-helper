@@ -16,9 +16,10 @@
  */
 package com.halcyonmobile.oauth.internal
 
+import com.halcyonmobile.oauth.causeHttpException
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
-import java.net.HttpURLConnection
 import retrofit2.HttpException
+import java.net.HttpURLConnection
 
 /**
  * Default implementation of [IsSessionExpiredException].
@@ -27,11 +28,10 @@ import retrofit2.HttpException
  * responses.
  */
 class DefaultIsSessionExpiredException : IsSessionExpiredException {
-    override fun invoke(throwable: Throwable): Boolean =
-        when (throwable) {
-            is HttpException -> throwable.isInvalidTokenException() || throwable.isExpiredTokenException()
-            else -> false
-        }
+    override fun invoke(throwable: Throwable): Boolean {
+        val httpException = throwable.causeHttpException ?: return false
+        return httpException.isInvalidTokenException() || httpException.isExpiredTokenException()
+    }
 
     companion object {
         private fun HttpException.isInvalidTokenException() =
