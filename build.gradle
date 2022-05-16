@@ -9,7 +9,7 @@ buildscript {
         coroutinesVersion = "1.6.0"
         gsonVersion = "2.8.9"
         junitVersion = "4.13.2"
-        koinVersion = "3.1.5"
+        koinVersion = "3.2.0"
         kotlinVersion = "1.6.10"
         kotlinPoetVersion = "1.10.2"
         moshiVersion = "1.13.0"
