@@ -13,7 +13,7 @@ buildscript {
         kotlinVersion = "1.6.10"
         kotlinPoetVersion = "1.10.2"
         moshiVersion = "1.13.0"
-        okHttpVersion = "4.9.3"
+        okHttpVersion = "4.10.0"
         okioVersion = "2.10.0"
         retrofitVersion = "2.9.0"
         securityVersion = "1.0.0"
