@@ -88,8 +88,12 @@ class AuthenticationTest {
         mockWebServer.shutdown()
     }
 
+    /** GIVEN failing request with unauthorized
+     * WHEN the refresh token request succeeds
+     * THEN it's saved into the local storage and the request header is updated
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized WHEN the refresh token request succeeds THEN it's saved into the local storage and the request header is updated`() {
+    fun refreshAfterFailureSavesDataAndUpdatesRequest() {
         var tokenType = ""
         var accessToken = ""
         var refreshToken = "something"
@@ -116,8 +120,12 @@ class AuthenticationTest {
         assertEquals("bearer best-token", requestAfterAuthorization.getHeader("Authorization"))
     }
 
+    /** GIVEN failing request with unauthorized
+     * WHEN the refresh token expired
+     * THEN sessionExpiration is invoked
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized WHEN the refresh token expired THEN sessionExpiration is invoked`() {
+    fun sessionExpirationBecauseOfExpiration() {
         var tokenType = ""
         var accessToken = ""
         var refreshToken = "something"
@@ -140,8 +148,13 @@ class AuthenticationTest {
         verifyNoMoreInteractions(mockSessionExpiredEventHandler)
     }
 
+    /**
+     * GIVEN failing request with unauthorized
+     * WHEN the refresh token is invalid
+     * THEN sessionExpiration is invoked
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized WHEN the refresh token is invalid THEN sessionExpiration is invoked`() {
+    fun sessionExpirationBecauseOfInvalid() {
         var tokenType = ""
         var accessToken = ""
         var refreshToken = "something"
@@ -164,8 +177,13 @@ class AuthenticationTest {
         verifyNoMoreInteractions(mockSessionExpiredEventHandler)
     }
 
+    /**
+     * GIVEN failing request with unauthorized
+     * WHEN the refresh token is fails first times but succeeds the second time
+     * THEN the request is resend
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized WHEN the refresh token is fails first times but succeeds the second time THEN the request is resend`() {
+    fun refreshTokenRequestIsRetried() {
         var tokenType = ""
         var accessToken = ""
         var refreshToken = "something"
@@ -204,8 +222,13 @@ class AuthenticationTest {
         assertEquals("bearer best-token", retriedRequest.getHeader("Authorization"))
     }
 
+    /**
+     * GIVEN failing request with unauthorized
+     * WHEN the refresh token is fails 3 times
+     * THEN the request is failed with 401
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized WHEN the refresh token is fails 3 times THEN the request is failed with 401`() {
+    fun multipleRefreshFailureResultsInStandardError() {
         whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(500, "{}")
@@ -236,8 +259,13 @@ class AuthenticationTest {
         assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, response.code())
     }
 
+    /**
+     * GIVEN failing request with unauthorized and marked via header
+     * WHEN the refresh token succeeds
+     * THEN the request is failed with the specific exception
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN failing request with unauthorized and marked via header WHEN the refresh token succeeds THEN the request is failed with the specific exception`() {
+    fun invalidatedRequestIsNotRetriedOnSessionFailure() {
         whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
@@ -252,8 +280,12 @@ class AuthenticationTest {
         assertEquals("The specific exception wasn't shown", true, wasCaught)
     }
 
+    /** GIVEN suspending failing request with unauthorized and marked via header
+     * WHEN the refresh token succeeds
+     * THEN the request is failed with the specific exception
+     */
     @Test(timeout = 20000L)
-    fun `GIVEN suspending failing request with unauthorized and marked via header WHEN the refresh token succeeds THEN the request is failed with the specific exception`() =
+    fun suspendInvalidatedRequestIsNotRetriedOnSessionFailure() =
         runBlocking<Unit> {
             whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
             mockWebServer.enqueueRequest(401, "{}")
@@ -276,13 +308,13 @@ class AuthenticationTest {
 
         @GET("test/service")
         fun authInvalidTest(
-            @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader : String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
-        ) : Call<Unit>
+            @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader: String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
+        ): Call<Unit>
 
         @GET("test/service")
         suspend fun authInvalidTestSuspend(
-            @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader : String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
-        ) : Unit
+            @Header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) invalidHeader: String = INVALIDATION_AFTER_REFRESH_HEADER_VALUE
+        ): Unit
     }
 
     companion object {
@@ -290,16 +322,16 @@ class AuthenticationTest {
          * Enqueue a [MockResponse] with the given [bodyJson] as [MockResponse.body] and given [responseCode] as [MockResponse.setResponseCode]
          */
         fun MockWebServer.enqueueRequest(responseCode: Int = 200, bodyJson: String) =
-                enqueue(MockResponse().apply {
-                    setBody(bodyJson)
-                    setResponseCode(responseCode)
-                })
+            enqueue(MockResponse().apply {
+                setBody(bodyJson)
+                setResponseCode(responseCode)
+            })
 
         /**
          * Reads content of the given [fileName] resource file into a String
          */
         fun readJsonResourceFileToString(fileName: String): String {
-            val uri =  ClassLoader.getSystemResource(fileName).toURI()
+            val uri = ClassLoader.getSystemResource(fileName).toURI()
             val mainPath: String = Paths.get(uri).toString()
             return Files.lines(Paths.get(mainPath)).collect(Collectors.joining())
         }
