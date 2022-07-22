@@ -20,11 +20,14 @@ import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionE
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.internal.AuthenticationHeaderInterceptor
 import com.halcyonmobile.oauth.internal.Authenticator
 import com.halcyonmobile.oauth.internal.ClientIdParameterInterceptor
 import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauth.internal.SetAuthorizationHeaderUseCase
+import com.halcyonmobile.oauth.internal.TokenExpirationInterceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import kotlin.reflect.KClass
@@ -43,7 +46,8 @@ class OauthRetrofitContainerBuilder<T : Any>(
     private val authenticationLocalStorage: AuthenticationLocalStorage,
     private val refreshServiceClass: KClass<T>,
     private val adapter: AuthenticationServiceAdapter<T>,
-    private val sessionExpiredEventHandler: SessionExpiredEventHandler
+    private val sessionExpiredEventHandler: SessionExpiredEventHandler,
+    private val tokenExpirationStorage: TokenExpirationStorage = NeverExpiredTokenExpirationStorage()
 ) {
 
     private val retrofitBuilder = Retrofit.Builder()
@@ -117,18 +121,22 @@ class OauthRetrofitContainerBuilder<T : Any>(
             .client(sessionlessOkHttpClient)
             .build()
 
+        val authenticator = Authenticator(
+            refreshTokenService = adapter.adapt(sessionlessRetrofit.create(refreshServiceClass.java)),
+            authenticationLocalStorage = authenticationLocalStorage,
+            sessionExpiredEventHandler = sessionExpiredEventHandler,
+            isSessionExpiredException = isSessionExpiredException,
+            setAuthorizationHeader = authorizationHeaderUseCase
+        )
+        val tokenExpirationInterceptor = TokenExpirationInterceptor(
+            authenticator = authenticator,
+            tokenExpirationStorage = tokenExpirationStorage
+        )
         val sessionOkHttpClient = sessionOkHttpClientConfigurations.fold(
             okHttpClient.newBuilder()
                 .addInterceptor(AuthenticationHeaderInterceptor(authorizationHeaderUseCase))
-                .authenticator(
-                    Authenticator(
-                        refreshTokenService = adapter.adapt(sessionlessRetrofit.create(refreshServiceClass.java)),
-                        authenticationLocalStorage = authenticationLocalStorage,
-                        sessionExpiredEventHandler = sessionExpiredEventHandler,
-                        isSessionExpiredException = isSessionExpiredException,
-                        setAuthorizationHeader = authorizationHeaderUseCase
-                    )
-                )
+                .addInterceptor(tokenExpirationInterceptor)
+                .authenticator(authenticator)
         ) { client, configurator ->
             configurator(client)
         }

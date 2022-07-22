@@ -136,7 +136,7 @@ class AuthentiationWithTokenStorageExpirationTest {
      * WHEN the request goes out
      * THEN before it's sent, the refresh request is called and token is updated
      */
-    @Test(timeout = 20000L)
+    @Test//(timeout = 20000L)
     fun expiredTokenMeansRefreshBeforeRequest() {
         var tokenType = "bearerx"
         var accessToken = "access"

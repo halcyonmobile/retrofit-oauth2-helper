@@ -25,6 +25,8 @@ import com.halcyonmobile.oauth.SessionDataResponse
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthparsing.AuthenticationServiceAdapterImpl
 import com.halcyonmobile.oauthparsing.OauthRetrofitWithParserContainerBuilder
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
@@ -41,7 +43,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 class OauthRetrofitWithGsonContainerBuilder(
     clientId: String,
     authenticationLocalStorage: AuthenticationLocalStorage,
-    sessionExpiredEventHandler: SessionExpiredEventHandler
+    sessionExpiredEventHandler: SessionExpiredEventHandler,
+    tokenExpirationStorage: TokenExpirationStorage = NeverExpiredTokenExpirationStorage()
 ) : OauthRetrofitWithParserContainerBuilder<OauthRetrofitWithGsonContainerBuilder, Gson> {
 
     private var disableDefaultParsing = false
@@ -52,6 +55,7 @@ class OauthRetrofitWithGsonContainerBuilder(
         adapter = authenticationServiceAdapterImpl,
         sessionExpiredEventHandler = sessionExpiredEventHandler,
         authenticationLocalStorage = authenticationLocalStorage,
+        tokenExpirationStorage = tokenExpirationStorage,
         refreshServiceClass = RefreshTokenService::class
     )
 

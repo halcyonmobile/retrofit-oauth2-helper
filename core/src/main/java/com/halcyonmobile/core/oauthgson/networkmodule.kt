@@ -22,6 +22,7 @@ import com.halcyonmobile.core.SessionlessExampleService
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthgson.OauthRetrofitContainerWithGson
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
@@ -49,13 +50,15 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage?.invoke(this) ?: NeverExpiredTokenExpirationStorage() }
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
                 OauthRetrofitWithGsonContainerBuilder(
                     clientId = clientId,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler()
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get()
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
