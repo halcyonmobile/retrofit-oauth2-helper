@@ -21,11 +21,13 @@ import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_NAME
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidation
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidationSuspend
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
@@ -53,11 +55,17 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.stream.Collectors
 
-class AuthenticationTest {
+/**
+ * Same test as [AuthenticationWithoutTokenStorageTest] but with given [TokenExpirationStorage], but its token is never expired.
+ *
+ * Tests that the behaviour is still the same even if the [TokenExpirationStorage] is given, but not saved.
+ */
+class AuthenticationWithTokenStorageLocallyNotExpiredTest {
 
     private lateinit var path: String
     private lateinit var mockSessionExpiredEventHandler: SessionExpiredEventHandler
     private lateinit var mockAuthenticationLocalStorage: AuthenticationLocalStorage
+    private lateinit var mockTokenExpirationStorage: TokenExpirationStorage
     private lateinit var mockWebServer: MockWebServer
     private lateinit var sut: AuthService
 
@@ -67,13 +75,16 @@ class AuthenticationTest {
         mockWebServer = MockWebServer()
         mockAuthenticationLocalStorage = mock()
         mockSessionExpiredEventHandler = mock()
+        mockTokenExpirationStorage = mock()
+        whenever(mockTokenExpirationStorage.accessTokenExpiresAt).doReturn(Long.MAX_VALUE)
         sut = startKoin {
             modules(
                 createNetworkModules(
                     baseUrl = mockWebServer.url(path).toString(),
                     clientId = "clientId",
                     provideSessionExpiredEventHandler = { mockSessionExpiredEventHandler },
-                    provideAuthenticationLocalStorage = { mockAuthenticationLocalStorage }
+                    provideAuthenticationLocalStorage = { mockAuthenticationLocalStorage },
+                    provideTokenExpirationStorage = { mockTokenExpirationStorage }
                 )
                     .plus(module {
                         factory { get<Retrofit>(SESSION_RETROFIT).create(AuthService::class.java) }
@@ -285,21 +296,20 @@ class AuthenticationTest {
      * THEN the request is failed with the specific exception
      */
     @Test(timeout = 20000L)
-    fun suspendInvalidatedRequestIsNotRetriedOnSessionFailure() =
-        runBlocking<Unit> {
-            whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
-            mockWebServer.enqueueRequest(401, "{}")
-            mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
+    fun suspendInvalidatedRequestIsNotRetriedOnSessionFailure() = runBlocking<Unit> {
+        whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
+        mockWebServer.enqueueRequest(401, "{}")
+        mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
 
-            var wasCaught = false
-            runCatchingCausedByAuthFinishedInvalidationSuspend({
-                sut.authInvalidTestSuspend()
-            }, {
-                wasCaught = true
-            })
+        var wasCaught = false
+        runCatchingCausedByAuthFinishedInvalidationSuspend({
+            sut.authInvalidTestSuspend()
+        }, {
+            wasCaught = true
+        })
 
-            assertEquals("The specific exception wasn't shown", true, wasCaught)
-        }
+        assertEquals("The specific exception wasn't shown", true, wasCaught)
+    }
 
     interface AuthService {
 
