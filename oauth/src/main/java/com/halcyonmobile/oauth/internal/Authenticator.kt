@@ -24,6 +24,7 @@ import com.halcyonmobile.oauth.authFinishedInvalidationException
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.save
 import java.io.IOException
 import okhttp3.Authenticator
@@ -51,7 +52,9 @@ internal class Authenticator(
     private val authenticationLocalStorage: AuthenticationLocalStorage,
     private val setAuthorizationHeader: SetAuthorizationHeaderUseCase,
     private val isSessionExpiredException: IsSessionExpiredException,
-    private val sessionExpiredEventHandler: SessionExpiredEventHandler
+    private val sessionExpiredEventHandler: SessionExpiredEventHandler,
+    private val tokenExpirationStorage: TokenExpirationStorage,
+    private val clock: Clock = Clock()
 ) : Authenticator {
 
     @Throws(IOException::class)
@@ -72,6 +75,7 @@ internal class Authenticator(
                     val sessionDataResponse: SessionDataResponse? = refreshTokenResponse.body()
                     if (refreshTokenResponse.isSuccessful && sessionDataResponse != null) {
                         authenticationLocalStorage.save(sessionDataResponse)
+                        tokenExpirationStorage.save(clock, sessionDataResponse)
 
                         // throw exception since the header is present
                         if (request.header(INVALIDATION_AFTER_REFRESH_HEADER_NAME) == INVALIDATION_AFTER_REFRESH_HEADER_VALUE) {

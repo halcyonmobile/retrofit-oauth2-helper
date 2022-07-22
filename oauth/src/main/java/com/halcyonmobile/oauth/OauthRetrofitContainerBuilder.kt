@@ -126,7 +126,8 @@ class OauthRetrofitContainerBuilder<T : Any>(
             authenticationLocalStorage = authenticationLocalStorage,
             sessionExpiredEventHandler = sessionExpiredEventHandler,
             isSessionExpiredException = isSessionExpiredException,
-            setAuthorizationHeader = authorizationHeaderUseCase
+            setAuthorizationHeader = authorizationHeaderUseCase,
+            tokenExpirationStorage = tokenExpirationStorage
         )
         val tokenExpirationInterceptor = TokenExpirationInterceptor(
             authenticator = authenticator,

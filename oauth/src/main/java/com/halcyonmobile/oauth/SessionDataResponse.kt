@@ -29,4 +29,5 @@ interface SessionDataResponse {
     val token: String
     val refreshToken: String
     val tokenType: String
+    val expiresInSeconds: Long? get() = null
 }

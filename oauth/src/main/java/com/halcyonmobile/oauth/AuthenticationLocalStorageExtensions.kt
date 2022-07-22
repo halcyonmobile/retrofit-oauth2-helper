@@ -18,6 +18,9 @@ package com.halcyonmobile.oauth
 
 import androidx.annotation.WorkerThread
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.Clock
+import java.util.concurrent.TimeUnit
 
 /**
  * Saves all the necessary data from the [sessionDataResponse] to the given [receiver][AuthenticationLocalStorage]
@@ -28,4 +31,9 @@ fun AuthenticationLocalStorage.save(sessionDataResponse: SessionDataResponse) {
     refreshToken = sessionDataResponse.refreshToken
     tokenType = sessionDataResponse.tokenType
     userId = sessionDataResponse.userId
+}
+
+fun TokenExpirationStorage.save(clock: Clock, sessionDataResponse: SessionDataResponse) {
+    val expiresIn = sessionDataResponse.expiresInSeconds ?: return
+    accessTokenExpiresAt = clock.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiresIn)
 }
