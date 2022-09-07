@@ -1,0 +1,22 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = project.jvmTarget
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = project.jvmTarget
+    }
+}
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "androidx.annotation:annotation:$annotationVersion"
+    implementation project(":oauthdependencies")
+    implementation "junit:junit:$junitVersion"
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8

@@ -16,27 +16,26 @@
  */
 package com.halcyonmobile.core
 
-import com.halcyonmobile.core.AuthenticationWithoutTokenStorageTest.Companion.enqueueRequest
-import com.halcyonmobile.core.compatibility.error.wrapping.TestClock
 import com.halcyonmobile.core.oauthgson.createNetworkModules
+import com.halcyonmobile.core.util.FakeAuthenticationLocalStorage
+import com.halcyonmobile.core.util.FakeTokenExpirationStorage
+import com.halcyonmobile.core.util.TestClock
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_NAME
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.internal.Clock
-import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidation
-import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidationSuspend
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
@@ -53,7 +52,6 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Header
-import java.net.HttpURLConnection
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -67,8 +65,8 @@ class AuthentiationWithTokenStorageExpirationTest {
 
     private lateinit var path: String
     private lateinit var mockSessionExpiredEventHandler: SessionExpiredEventHandler
-    private lateinit var mockAuthenticationLocalStorage: AuthenticationLocalStorage
-    private lateinit var mockTokenExpirationStorage: TokenExpirationStorage
+    private lateinit var fakeAuthenticationLocalStorage: FakeAuthenticationLocalStorage
+    private lateinit var fakeTokenExpirationStorage: TokenExpirationStorage
     private lateinit var mockWebServer: MockWebServer
     private lateinit var sut: AuthService
     private lateinit var testClock: TestClock
@@ -77,9 +75,9 @@ class AuthentiationWithTokenStorageExpirationTest {
     fun setup() {
         path = "path/test/"
         mockWebServer = MockWebServer()
-        mockAuthenticationLocalStorage = mock()
+        fakeAuthenticationLocalStorage = FakeAuthenticationLocalStorage()
         mockSessionExpiredEventHandler = mock()
-        mockTokenExpirationStorage = mock()
+        fakeTokenExpirationStorage = FakeTokenExpirationStorage()
         testClock = TestClock(5000L)
         Clock.swap(testClock)
         sut = startKoin {
@@ -88,8 +86,8 @@ class AuthentiationWithTokenStorageExpirationTest {
                     baseUrl = mockWebServer.url(path).toString(),
                     clientId = "clientId",
                     provideSessionExpiredEventHandler = { mockSessionExpiredEventHandler },
-                    provideAuthenticationLocalStorage = { mockAuthenticationLocalStorage },
-                    provideTokenExpirationStorage = { mockTokenExpirationStorage }
+                    provideAuthenticationLocalStorage = { fakeAuthenticationLocalStorage },
+                    provideTokenExpirationStorage = { fakeTokenExpirationStorage }
                 )
                     .plus(module {
                         factory { get<Retrofit>(SESSION_RETROFIT).create(AuthService::class.java) }
@@ -110,16 +108,13 @@ class AuthentiationWithTokenStorageExpirationTest {
      */
     @Test(timeout = 20000L)
     fun nonExpiredTokenRequestJustGoesOut() {
-        var tokenType = "bearer"
-        var accessToken = "access"
-        var refreshToken = "something"
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        whenever(mockTokenExpirationStorage.accessTokenExpiresAt).thenReturn(Long.MAX_VALUE)
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
+        val tokenType = "bearer"
+        val accessToken = "access"
+        val refreshToken = "something"
+        fakeAuthenticationLocalStorage.tokenType = tokenType
+        fakeAuthenticationLocalStorage.accessToken = accessToken
+        fakeAuthenticationLocalStorage.refreshToken = refreshToken
+        fakeTokenExpirationStorage.accessTokenExpiresAt = Long.MAX_VALUE
         mockWebServer.enqueueRequest(200, "{}")
 
         sut.sessionRelatedRequest().execute()
@@ -138,18 +133,10 @@ class AuthentiationWithTokenStorageExpirationTest {
      */
     @Test(timeout = 20000L)
     fun expiredTokenMeansRefreshBeforeRequest() {
-        var tokenType = "bearerx"
-        var accessToken = "access"
-        var refreshToken = "something"
-        var expirationTime = Long.MIN_VALUE
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        whenever(mockTokenExpirationStorage.accessTokenExpiresAt).thenReturn(expirationTime)
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
-        doAnswer { expirationTime = it.arguments.first() as Long }.whenever(mockTokenExpirationStorage).accessTokenExpiresAt = any()
+        fakeAuthenticationLocalStorage.tokenType = "bearerx"
+        fakeAuthenticationLocalStorage.accessToken = "access"
+        fakeAuthenticationLocalStorage.refreshToken = "something"
+        fakeTokenExpirationStorage.accessTokenExpiresAt = Long.MIN_VALUE
 
         mockWebServer.enqueueRequest(200, AuthenticationWithoutTokenStorageTest.readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
         mockWebServer.enqueueRequest(200, "{}")
@@ -159,14 +146,13 @@ class AuthentiationWithTokenStorageExpirationTest {
         val refreshRequest = mockWebServer.takeRequest()
         val sessionRequest = mockWebServer.takeRequest()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
-        verify(mockAuthenticationLocalStorage, times(1)).userId = "user-id"
-        verify(mockAuthenticationLocalStorage, times(1)).accessToken = "best-token"
-        verify(mockAuthenticationLocalStorage, times(1)).tokenType = "bearer"
-        verify(mockAuthenticationLocalStorage, times(1)).refreshToken = "new-refresh-token"
-        verify(mockTokenExpirationStorage, times(1)).accessTokenExpiresAt = testClock.currentTimeMillis() + TimeUnit.SECONDS.toMillis(299)
+        assertEquals("user-id", fakeAuthenticationLocalStorage.userId)
+        assertEquals("best-token", fakeAuthenticationLocalStorage.accessToken)
+        assertEquals("bearer", fakeAuthenticationLocalStorage.tokenType)
+        assertEquals("new-refresh-token", fakeAuthenticationLocalStorage.refreshToken)
+        assertEquals(testClock.currentTimeMillis() + TimeUnit.SECONDS.toMillis(299), fakeTokenExpirationStorage.accessTokenExpiresAt)
         assertEquals("bearer best-token", sessionRequest.getHeader("Authorization"))
     }
-
 
     interface AuthService {
 

@@ -97,7 +97,7 @@ internal class Authenticator(
                             }
                         }
                     }
-                    throwable.printStackTrace()
+//                    throwable.printStackTrace()
                 }
             }
 
@@ -109,6 +109,7 @@ internal class Authenticator(
     /** On SessionExpiration we clear the data and report the event. */
     private fun onSessionExpiration() {
         authenticationLocalStorage.clear()
+        tokenExpirationStorage.clear()
         sessionExpiredEventHandler.onSessionExpired()
     }
 

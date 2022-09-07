@@ -1,4 +1,4 @@
-package com.halcyonmobile.core.compatibility.error.wrapping
+package com.halcyonmobile.core.util
 
 import com.halcyonmobile.oauth.internal.Clock
 

@@ -17,16 +17,14 @@
 package com.halcyonmobile.core
 
 import com.halcyonmobile.core.oauthgson.createNetworkModules
+import com.halcyonmobile.core.util.FakeAuthenticationLocalStorage
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_NAME
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
-import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidation
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidationSuspend
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
@@ -64,7 +62,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
 
     private lateinit var path: String
     private lateinit var mockSessionExpiredEventHandler: SessionExpiredEventHandler
-    private lateinit var mockAuthenticationLocalStorage: AuthenticationLocalStorage
+    private lateinit var fakeAuthenticationLocalStorage: FakeAuthenticationLocalStorage
     private lateinit var mockTokenExpirationStorage: TokenExpirationStorage
     private lateinit var mockWebServer: MockWebServer
     private lateinit var sut: AuthService
@@ -73,7 +71,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
     fun setup() {
         path = "path/test/"
         mockWebServer = MockWebServer()
-        mockAuthenticationLocalStorage = mock()
+        fakeAuthenticationLocalStorage = FakeAuthenticationLocalStorage()
         mockSessionExpiredEventHandler = mock()
         mockTokenExpirationStorage = mock()
         whenever(mockTokenExpirationStorage.accessTokenExpiresAt).doReturn(Long.MAX_VALUE)
@@ -83,7 +81,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
                     baseUrl = mockWebServer.url(path).toString(),
                     clientId = "clientId",
                     provideSessionExpiredEventHandler = { mockSessionExpiredEventHandler },
-                    provideAuthenticationLocalStorage = { mockAuthenticationLocalStorage },
+                    provideAuthenticationLocalStorage = { fakeAuthenticationLocalStorage },
                     provideTokenExpirationStorage = { mockTokenExpirationStorage }
                 )
                     .plus(module {
@@ -105,15 +103,9 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun refreshAfterFailureSavesDataAndUpdatesRequest() {
-        var tokenType = ""
-        var accessToken = ""
-        var refreshToken = "something"
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
+        fakeAuthenticationLocalStorage.tokenType = ""
+        fakeAuthenticationLocalStorage.accessToken = ""
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
         mockWebServer.enqueueRequest(200, "{}")
@@ -124,10 +116,10 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
         mockWebServer.takeRequest()
         val requestAfterAuthorization = mockWebServer.takeRequest()
         verifyZeroInteractions(mockSessionExpiredEventHandler)
-        verify(mockAuthenticationLocalStorage, times(1)).userId = "user-id"
-        verify(mockAuthenticationLocalStorage, times(1)).accessToken = "best-token"
-        verify(mockAuthenticationLocalStorage, times(1)).tokenType = "bearer"
-        verify(mockAuthenticationLocalStorage, times(1)).refreshToken = "new-refresh-token"
+        assertEquals("user-id", fakeAuthenticationLocalStorage.userId)
+        assertEquals("best-token", fakeAuthenticationLocalStorage.accessToken)
+        assertEquals("bearer", fakeAuthenticationLocalStorage.tokenType)
+        assertEquals("new-refresh-token", fakeAuthenticationLocalStorage.refreshToken)
         assertEquals("bearer best-token", requestAfterAuthorization.getHeader("Authorization"))
     }
 
@@ -137,15 +129,9 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun sessionExpirationBecauseOfExpiration() {
-        var tokenType = ""
-        var accessToken = ""
-        var refreshToken = "something"
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
+        fakeAuthenticationLocalStorage.tokenType = ""
+        fakeAuthenticationLocalStorage.accessToken = ""
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(401, readJsonResourceFileToString("authentication_service/refresh_token_expired.json"))
 
@@ -155,7 +141,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
         }
 
         verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
-        verify(mockAuthenticationLocalStorage, times(1)).clear()
+        assertEquals(1, fakeAuthenticationLocalStorage.clearCount)
         verifyNoMoreInteractions(mockSessionExpiredEventHandler)
     }
 
@@ -166,15 +152,9 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun sessionExpirationBecauseOfInvalid() {
-        var tokenType = ""
-        var accessToken = ""
-        var refreshToken = "something"
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
+        fakeAuthenticationLocalStorage.tokenType = ""
+        fakeAuthenticationLocalStorage.accessToken = ""
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(400, readJsonResourceFileToString("authentication_service/refresh_token_bad_token.json"))
 
@@ -183,7 +163,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
         } catch (httpException: HttpException) {
         }
 
-        verify(mockAuthenticationLocalStorage, times(1)).clear()
+        assertEquals(1, fakeAuthenticationLocalStorage.clearCount)
         verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
         verifyNoMoreInteractions(mockSessionExpiredEventHandler)
     }
@@ -195,16 +175,9 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun refreshTokenRequestIsRetried() {
-        var tokenType = ""
-        var accessToken = ""
-        var refreshToken = "something"
-        whenever(mockAuthenticationLocalStorage.tokenType).thenAnswer { tokenType }
-        whenever(mockAuthenticationLocalStorage.accessToken).thenAnswer { accessToken }
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenAnswer { refreshToken }
-        doAnswer { tokenType = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).tokenType = any()
-        doAnswer { accessToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).accessToken = any()
-        doAnswer { refreshToken = it.arguments.first() as String }.whenever(mockAuthenticationLocalStorage).refreshToken = any()
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
+        fakeAuthenticationLocalStorage.tokenType = ""
+        fakeAuthenticationLocalStorage.accessToken = ""
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(500, "{}")
         mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
@@ -223,7 +196,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest2.body.readUtf8())
         assertEquals("POST", authRequest2.method)
         assertEquals("/${path}oauth/token", authRequest2.requestUrl?.encodedPath)
-        verify(mockAuthenticationLocalStorage, times(0)).clear()
+        assertEquals(0, fakeAuthenticationLocalStorage.clearCount)
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, retriedRequest.requestUrl)
 
@@ -240,7 +213,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun multipleRefreshFailureResultsInStandardError() {
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(500, "{}")
         mockWebServer.enqueueRequest(500, "{}")
@@ -262,7 +235,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
         assertEquals("refresh_token=something&grant_type=refresh_token", authRequest3.body.readUtf8())
         assertEquals("POST", authRequest3.method)
         assertEquals("/${path}oauth/token", authRequest3.requestUrl?.encodedPath)
-        verify(mockAuthenticationLocalStorage, times(0)).clear()
+        assertEquals(0, fakeAuthenticationLocalStorage.clearCount)
         verifyZeroInteractions(mockSessionExpiredEventHandler)
         assertEquals(firstRequest.requestUrl, firstRequest.requestUrl)
         assertEquals(firstRequest.headers, firstRequest.headers)
@@ -277,7 +250,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun invalidatedRequestIsNotRetriedOnSessionFailure() {
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
 
@@ -297,7 +270,7 @@ class AuthenticationWithTokenStorageLocallyNotExpiredTest {
      */
     @Test(timeout = 20000L)
     fun suspendInvalidatedRequestIsNotRetriedOnSessionFailure() = runBlocking<Unit> {
-        whenever(mockAuthenticationLocalStorage.refreshToken).thenReturn("something")
+        fakeAuthenticationLocalStorage.refreshToken = "something"
         mockWebServer.enqueueRequest(401, "{}")
         mockWebServer.enqueueRequest(200, readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
 

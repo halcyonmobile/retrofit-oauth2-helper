@@ -12,3 +12,4 @@ include(
     ":oauthsecurestorage",
     ":oauthsecurestoragecompat"
 )
+include(":dependenciestest")

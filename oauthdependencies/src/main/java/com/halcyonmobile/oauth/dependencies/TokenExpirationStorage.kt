@@ -15,4 +15,9 @@ interface TokenExpirationStorage  {
     @set:WorkerThread
     @get:WorkerThread
     var accessTokenExpiresAt: Long
+
+    /**
+     * Clears the expiration time (means it's expired at this time)
+     */
+    fun clear()
 }
