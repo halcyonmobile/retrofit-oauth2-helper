@@ -41,7 +41,7 @@ fun createNetworkModules(
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
     provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
-    provideTokenExpirationStorage: (Scope.() -> TokenExpirationStorage)? = null
+    provideTokenExpirationStorage: (Scope.() -> TokenExpirationStorage) = { NeverExpiredTokenExpirationStorage() }
 ): List<Module> {
     return listOf(
         module {
@@ -50,7 +50,7 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
-            single { provideTokenExpirationStorage?.invoke(this) ?: NeverExpiredTokenExpirationStorage() }
+            single { provideTokenExpirationStorage() }
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
