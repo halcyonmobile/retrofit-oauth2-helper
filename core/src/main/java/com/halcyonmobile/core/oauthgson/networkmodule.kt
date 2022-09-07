@@ -27,6 +27,7 @@ import com.halcyonmobile.oauthgson.OauthRetrofitContainerWithGson
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
+import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.core.module.Module
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
@@ -62,6 +63,9 @@ fun createNetworkModules(
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
+                    }
+                    .configureBothOkHttpClient {
+                        addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
                     }
                     .build()
             }

@@ -18,22 +18,61 @@ package com.halcyonmobile.oauth_retrofit
 
 import android.content.Context
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauthsecurestorage.AuthenticationSecureSharedPreferencesStorage
+import com.halcyonmobile.oauthsecurestorage.CombinedSecureSharedPreferencesStorage
 import com.halcyonmobile.oauthsecurestoragecompat.AuthenticationSecureSharedPreferencesStorageCompat
+import com.halcyonmobile.oauthsecurestoragecompat.CombinedSecureSharedPreferencesStorageCompat
 import com.halcyonmobile.oauthstorage.AuthenticationSharedPreferencesStorage
+import com.halcyonmobile.oauthstorage.CombinedSharedPreferencesStorage
 
-class SharedPreferencesManager private constructor(authenticationLocalStorage: AuthenticationLocalStorage) :
-    AuthenticationLocalStorage by authenticationLocalStorage {
+class SharedPreferencesManager private constructor(
+    private val combinedSharedPreferencesStorage: CombinedSharedPreferencesStorage
+) : AuthenticationLocalStorage by combinedSharedPreferencesStorage, TokenExpirationStorage by combinedSharedPreferencesStorage {
 
-    constructor(context: Context, encrypted: Boolean = false, compat: Boolean = false) : this(createAuthenticationLocalStorage(context, encrypted, compat))
+    constructor(context: Context, type: Type = Type.ONLY_AUTH, variant: Variant = Variant.DEFAULT) : this(createAuthenticationLocalStorage(context, type, variant))
 
+    override fun clear() {
+        combinedSharedPreferencesStorage.clear()
+    }
+
+    enum class Type {
+        ONLY_AUTH, WITH_TOKEN_EXPIRATION
+    }
+
+    enum class Variant {
+        COMPAT, ENCRYPTED, DEFAULT
+    }
 
     companion object {
-        private fun createAuthenticationLocalStorage(context: Context, encrypted: Boolean, compat: Boolean): AuthenticationLocalStorage =
-            when {
-                compat -> AuthenticationSecureSharedPreferencesStorageCompat(context)
-                encrypted -> AuthenticationSecureSharedPreferencesStorage.create(context)
-                else -> AuthenticationSharedPreferencesStorage(context)
+
+        private fun createAuthenticationLocalStorage(context: Context, type: Type, variant: Variant): CombinedSharedPreferencesStorage =
+            when (type) {
+                Type.ONLY_AUTH -> {
+                    val authStorage = when (variant) {
+                        Variant.COMPAT -> AuthenticationSecureSharedPreferencesStorageCompat(context)
+                        Variant.ENCRYPTED -> AuthenticationSecureSharedPreferencesStorage.create(context)
+                        Variant.DEFAULT -> AuthenticationSharedPreferencesStorage(context)
+                    }
+
+                    CombinedSharedPreferencesStorage(authStorage, NeverExpiredTokenExpirationStorage())
+                }
+                Type.WITH_TOKEN_EXPIRATION -> {
+                    when (variant) {
+                        Variant.COMPAT -> CombinedSecureSharedPreferencesStorageCompat.create(context)
+                        Variant.ENCRYPTED -> CombinedSecureSharedPreferencesStorage.create(context)
+                        Variant.DEFAULT -> CombinedSharedPreferencesStorage.create(context)
+                    }
+                }
             }
+
+        private class NeverExpiredTokenExpirationStorage : TokenExpirationStorage {
+
+            override var accessTokenExpiresAt: Long
+                get() = Long.MAX_VALUE
+                set(value) = Unit
+
+            override fun clear() = Unit
+        }
     }
 }
