@@ -24,6 +24,8 @@ import com.halcyonmobile.oauth.OauthRetrofitContainerBuilder
 import com.halcyonmobile.oauth.RefreshTokenServiceAuthenticationServiceAdapter
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
 import com.squareup.moshi.Moshi
@@ -41,7 +43,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: (Scope.() -> TokenExpirationStorage) = { NeverExpiredTokenExpirationStorage() }
 ): List<Module> {
     return listOf(
         module {
@@ -50,6 +53,7 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() }
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single { Moshi.Builder().build() }
@@ -57,8 +61,9 @@ fun createNetworkModules(
                 OauthRetrofitContainerBuilder(
                     clientId = clientId,
                     refreshServiceClass = RefreshTokenService::class,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler(),
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get(),
                     adapter = RefreshTokenServiceAuthenticationServiceAdapter()
                 )
                     .configureRetrofit {

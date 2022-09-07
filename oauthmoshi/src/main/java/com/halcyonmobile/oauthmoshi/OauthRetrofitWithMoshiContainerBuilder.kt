@@ -30,6 +30,8 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionExpiredException
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 
 /**
  * Builder class for [OauthRetrofitContainer] which uses moshi as it's [retrofit2.Converter.Factory].
@@ -39,7 +41,8 @@ import com.halcyonmobile.oauth.IsSessionExpiredException as DeprecatedIsSessionE
 class OauthRetrofitWithMoshiContainerBuilder(
     clientId: String,
     authenticationLocalStorage: AuthenticationLocalStorage,
-    sessionExpiredEventHandler: SessionExpiredEventHandler
+    sessionExpiredEventHandler: SessionExpiredEventHandler,
+    tokenExpirationStorage: TokenExpirationStorage = NeverExpiredTokenExpirationStorage()
 ) : OauthRetrofitWithParserContainerBuilder<OauthRetrofitWithMoshiContainerBuilder, Moshi> {
 
     private var disableDefaultParsing = false
@@ -50,6 +53,7 @@ class OauthRetrofitWithMoshiContainerBuilder(
         adapter = authenticationServiceAdapterImpl,
         sessionExpiredEventHandler = sessionExpiredEventHandler,
         authenticationLocalStorage = authenticationLocalStorage,
+        tokenExpirationStorage = tokenExpirationStorage,
         refreshServiceClass = RefreshTokenService::class
     )
 

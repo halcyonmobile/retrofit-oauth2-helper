@@ -21,6 +21,8 @@ import com.halcyonmobile.core.SessionExampleService
 import com.halcyonmobile.core.SessionlessExampleService
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthmoshi.OauthRetrofitContainerWithMoshi
 import com.halcyonmobile.oauthmoshi.OauthRetrofitWithMoshiContainerBuilder
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
@@ -38,7 +40,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: (Scope.() -> TokenExpirationStorage) = { NeverExpiredTokenExpirationStorage() }
 ): List<Module> {
     return listOf(
         module {
@@ -47,13 +50,15 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() }
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
                 OauthRetrofitWithMoshiContainerBuilder(
                     clientId = clientId,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler()
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get()
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
