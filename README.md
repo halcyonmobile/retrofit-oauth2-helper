@@ -39,6 +39,10 @@ Details can be found [here](https://oauth.net/2/ "here")
  
 Blog post explaining it [here](http://www.bubblecode.net/en/2016/01/22/understanding-oauth2/#targetText=OAuth2%20is%2C%20you%20guessed%20it,access%20on%20its%20own%20behalf. "here")
 
+##### Checking ExpiresIn
+
+Usually we also get back an `expires_in` response after receiving the Tokens. This signals to us in what time the token will expire.
+Optimally we should check this time and refresh our token before sending out the actual Data Request. This additional implementation was reported as Issue #89 and should be ready by setting `TokenExpirationStorage`.
 
 ### So how does this library help you with that?
 
@@ -50,10 +54,10 @@ Error Cases:
 
 - When the refresh-token is no longer valid or expired, (returned by the server while trying to refresh token) then you will receive a callback with session expiration and your request will fail with 401.
 - When the refresh-token request failed 3 times, then your request will fail with 401. And should be handled as normal network error
- 
- 
-To see the behaviour in action may refer to [com.halcyonmobile.core.AuthenticationTest] 
- 
+
+
+To see the behaviour in action may refer to [com.halcyonmobile.core.AuthenticationWithoutTokenStorageTest]
+
 ## Setup
 - This contains how you can use this library
 - *Latest version:* ![Latest release](https://img.shields.io/github/v/release/halcyonmobile/retrofit-oauth2-helper)
@@ -91,7 +95,7 @@ allprojects {
             // https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token
         }
     }
-} 
+}
 ```
 
 Note: you only need one maven declaration with "halcyonmobile/{specific}", every other package will be accessible.
@@ -99,12 +103,12 @@ Note: you only need one maven declaration with "halcyonmobile/{specific}", every
 ### General Idea
 
 - You will see a "core" and "app" module, this is specific to our architecture, the core means a module which does the business logic, network requests etc, it's a java module while the app module is handling the ui and other platform specific implementation details.
-- The idea is that in your core module you will do the configuration and get the created retrofit instances 
+- The idea is that in your core module you will do the configuration and get the created retrofit instances
 so it will depend on either the oauth or oauthkoin, oauthmoshi or some other variant
-- However the core module won't be able to contain all the needed dependencies, because of that you should use the 
+- However the core module won't be able to contain all the needed dependencies, because of that you should use the
 oauthdependencies in your app module so you can provide the storage and session expiration handler.
 - Optionally you can use the oauthstorage in your app to reduce the shared preferences boilerplate.
-- Optionally you can use the oauthadaptergenerator in your core where you define the refresh token retrofit service, so 
+- Optionally you can use the oauthadaptergenerator in your core where you define the refresh token retrofit service, so
 you don't need to write your adapter if it's simple.
 - Note: oauth-moshi, oauth-koin do not need adapters, they already contain a refresh service.
 
@@ -122,7 +126,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() }  // optional
 ): List<Module> {
     return listOf(
         module {
@@ -131,13 +136,15 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() }  // optional
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
                 OauthRetrofitWithMoshiContainerBuilder(
                     clientId = clientId,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler()
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get() // optional
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
@@ -174,7 +181,8 @@ fun createAllModules(baseUrl: String, clientId: String): List<Module> {
         baseUrl = baseUrl,
         clientId = clientId,
         provideAuthenticationLocalStorage = { get<SharedPreferenceManager>() },
-        provideSessionExpiredEventHandler = { get<SessionExpiredEventHandlerImpl>() }
+        provideSessionExpiredEventHandler = { get<SessionExpiredEventHandlerImpl>() },
+        provideTokenExpirationStorage = { get<SharedPreferenceManager>() } // optional
     ))
 }
 ```
@@ -213,6 +221,16 @@ How to handle the exception:
     }
 ```
 
+
+#### I want to take into account the expires_in response, what should I do?
+
+You have to do 3 things:
+- Parse the optional `expiresInSeconds` field of the `SessionDataResponse`
+- Save that field into the `TokenExpirationStorage` just like you should save your tokens into `AuthenticationLocalStorage`
+- Give the builder a `TokenExpirationStorage` implementation, you may use `CombinedSharedPreferencesStorage`.
+
+If you have done all that, whenever a request is sent out the current time will be checked agains `TokenExpirationStorage.accessTokenExpiresAt` and if it expired, then the RefreshToken Request will be run before sending out the Data Request. This mechanizm also synchronized so 2 request won't send 2 RefreshToken Requests, but wait for one and update their headers.
+
 ### Oauth-gson setup
 If you are using moshi and some other dependency injection framework than koin what you need to do is add the dependency in your build.gradle of your core module
 Note: still the example will be using koin, to adapt to your DI is your responsibility.
@@ -227,7 +245,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() } // optional
 ): List<Module> {
     return listOf(
         module {
@@ -236,13 +255,15 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() } // optional
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
                 OauthRetrofitWithGsonContainerBuilder(
                     clientId = clientId,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler()
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get() // optional
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
@@ -276,7 +297,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() } // optional
 ): List<Module> {
     return listOf(
     // your own custom module,
@@ -290,6 +312,7 @@ fun createNetworkModules(
             clientId = clientId,
             provideSessionExpiredEventHandler = provideSessionExpiredEventHandler,
             provideAuthenticationLocalStorage = provideAuthenticationLocalStorage,
+            provideTokenExpirationStorage = provideTokenExpirationStorage,
             configureRetrofit = {
                 it.baseUrl(baseUrl)
             }
@@ -303,7 +326,7 @@ Same as Oauth-moshi setup, please check that one out.
 
 ### Using Only oauth setup
 If none of the other setups are applicable, you are not using moshi then you can fallback to this, however i would suggest to add a new module with your implementation instead.
-Note: still the example will be using koin and moshi, to adapt to your DI is your responsibility. 
+Note: still the example will be using koin and moshi, to adapt to your DI is your responsibility.
 
 #### core module
 
@@ -361,7 +384,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() }  // optional
 ): List<Module> {
     return listOf(
         module {
@@ -370,6 +394,7 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() } // optional
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single { Moshi.Builder().build() }
@@ -377,8 +402,9 @@ fun createNetworkModules(
                 OauthRetrofitContainerBuilder(
                     clientId = clientId,
                     refreshServiceClass = RefreshTokenService::class,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler(),
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get() // optional
                     adapter = RefreshTokenServiceAuthenticationServiceAdapter()
                 )
                     .configureRetrofit {
@@ -427,20 +453,13 @@ The following section describes current modules and the preferred content & usag
 - An example of a core layer which used for networking and how it needs to configure the retrofit instances
 
 ### oauth
-- The base implementation of the extension. 
+- The base implementation of the extension.
 
 ### oauthdependencies
 - Dependencies which has to come from the outside (app module), but has no relation to retrofit
 
-### oauthkoin
-- this module contains configuration functions which create the koin modules you can simply add to your startKoin method
-- uses koin 1.0.2
-
-### oauthdagger (PLANED)
-- WIP
-
 ### oauthstorage
-- A persistent storage for session based on SharedPreferences. It's implemented in a way that can be used separately or 
+- A persistent storage for session based on SharedPreferences. It's implemented in a way that can be used separately or
 with an existing SharedPreferencesManager
 
 ### oauthsecurestorage
@@ -467,11 +486,14 @@ Note: it implements the oauthparsing
 
 ### oauthmoshkoin
 - this module contains a configuration function which create the koin module, which you can simply add to your other modules
-- uses koin 2.0.1
+- uses koin 3.1.5
 
 ### oauthgson
 - An extension of the base implementation which includes gson and the service with default parameters
 Here you don't need to write your own service and parsing, however you are still able to configure the service and parsing.
+
+### dependenciestest
+- Module intended only for testing. Contains Base test cases for Storage interface and other oauthdependencies interfaces.
 
 Note: it implements the oauthparsing
 
