@@ -49,26 +49,26 @@ open class AuthenticationSecureSharedPreferencesStorageCompat(private val authen
             encryptedFileName: String,
             preferenceKey: String
         ): AuthenticationSharedPreferencesStorage {
-            val nonEncryptedSharedPreferences = AuthenticationSharedPreferencesStorage.create(context, preferenceKey)
+            val nonEncryptedSharedPreferences = AuthenticationSharedPreferencesStorage.createSharedPreferences(context, preferenceKey)
 
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val authenticationSecureSharedPreferencesStorage = AuthenticationSecureSharedPreferencesStorage.create(context, encryptedFileName)
-                migrateIfNeeded(nonEncryptedSharedPreferences, authenticationSecureSharedPreferencesStorage)
+                val encryptedSharedPreferences = AuthenticationSecureSharedPreferencesStorage.createEncryptedSharedPreferences(context, encryptedFileName)
+                migrateIfNeeded(nonEncryptedSharedPreferences, encryptedSharedPreferences)
 
-                authenticationSecureSharedPreferencesStorage
+                AuthenticationSecureSharedPreferencesStorage(encryptedSharedPreferences)
             } else {
-                nonEncryptedSharedPreferences
+                AuthenticationSharedPreferencesStorage(nonEncryptedSharedPreferences)
             }
         }
 
-        private fun migrateIfNeeded(
-            nonEncryptedAuthenticationLocalStorage: AuthenticationSharedPreferencesStorage,
-            encryptedAuthenticationLocalStorage: AuthenticationSecureSharedPreferencesStorage
+        fun migrateIfNeeded(
+            nonEncryptedSharedPreferences: SharedPreferences,
+            encryptedSharedPreferences: SharedPreferences
         ) {
-            if (nonEncryptedAuthenticationLocalStorage.sharedPreferences.all.isNotEmpty()) {
-                nonEncryptedAuthenticationLocalStorage.sharedPreferences.copyTo(encryptedAuthenticationLocalStorage.sharedPreferences)
+            if (nonEncryptedSharedPreferences.all.isNotEmpty()) {
+                nonEncryptedSharedPreferences.copyTo(encryptedSharedPreferences)
 
-                nonEncryptedAuthenticationLocalStorage.sharedPreferences.edit().clear().apply()
+                nonEncryptedSharedPreferences.edit().clear().apply()
             }
         }
 
