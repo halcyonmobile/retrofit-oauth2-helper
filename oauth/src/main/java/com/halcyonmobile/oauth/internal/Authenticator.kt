@@ -58,15 +58,15 @@ internal class Authenticator(
 ) : Authenticator {
 
     @Throws(IOException::class)
-    override fun authenticate(route: Route?, response: Response): Request? = authenticate(response.request)
+    override fun authenticate(route: Route?, response: Response): Request? = authenticate(response.request).request
 
     @Throws(IOException::class)
-    fun authenticate(request: Request): Request? {
+    fun authenticate(request: Request): RefreshState {
         synchronized(this) {
             if (!setAuthorizationHeader.isSame(request)) {
-                return setAuthorizationHeader(request)
+                return RefreshState.SessionRefreshed(setAuthorizationHeader(request))
             } else if (authenticationLocalStorage.refreshToken.isEmpty()) {
-                return null
+                return RefreshState.SessionRefreshFailed()
             }
 
             repeat(REFRESH_TOKEN_RETRY_COUNT) {
@@ -83,7 +83,7 @@ internal class Authenticator(
                         }
 
                         // retry request with the new tokens
-                        return setAuthorizationHeader(request)
+                        return RefreshState.SessionRefreshed(setAuthorizationHeader(request))
                     } else {
                         throw HttpException(refreshTokenResponse)
                     }
@@ -93,7 +93,7 @@ internal class Authenticator(
                         else -> {
                             if (isSessionExpiredException(throwable)) {
                                 onSessionExpiration()
-                                return null
+                                return RefreshState.SessionExpired()
                             }
                         }
                     }
@@ -102,7 +102,7 @@ internal class Authenticator(
             }
 
             // return the request with 401 error since the refresh token failed 3 times.
-            return null
+            return RefreshState.SessionRefreshFailed()
         }
     }
 
@@ -111,6 +111,13 @@ internal class Authenticator(
         authenticationLocalStorage.clear()
         tokenExpirationStorage.clear()
         sessionExpiredEventHandler.onSessionExpired()
+    }
+
+    sealed class RefreshState {
+        abstract val request: Request?
+        class SessionExpired(override val request: Request? = null) : RefreshState()
+        class SessionRefreshed(override val request: Request) : RefreshState()
+        class SessionRefreshFailed(override val request: Request? = null) : RefreshState()
     }
 
     companion object {

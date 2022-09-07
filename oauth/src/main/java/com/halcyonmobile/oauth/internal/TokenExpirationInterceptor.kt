@@ -22,6 +22,7 @@ internal class TokenExpirationInterceptor(
             val request = chain.request()
             val updatedRequest = refreshTokenForRequest(request)
                 ?: return sessionExpirationErrorResponse(request)
+            // TODO: wrong error returned, what if it wouldn't be 401, but unknown host or similar?
             chain.proceed(updatedRequest)
         } else {
             chain.proceed(chain.request())
@@ -38,5 +39,9 @@ internal class TokenExpirationInterceptor(
             .build()
 
     private fun refreshTokenForRequest(request: Request) =
-        authenticator.authenticate(request)
+        when(val state = authenticator.authenticate(request)) {
+            is Authenticator.RefreshState.SessionExpired -> null
+            is Authenticator.RefreshState.SessionRefreshFailed -> request
+            is Authenticator.RefreshState.SessionRefreshed -> state.request
+        }
 }

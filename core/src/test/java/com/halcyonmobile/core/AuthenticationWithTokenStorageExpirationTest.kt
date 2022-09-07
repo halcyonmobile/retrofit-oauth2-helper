@@ -22,17 +22,24 @@ import com.halcyonmobile.core.util.FakeTokenExpirationStorage
 import com.halcyonmobile.core.util.TestClock
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_NAME
 import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.internal.Clock
+import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidation
 import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidationSuspend
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -46,6 +53,7 @@ import org.junit.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.mockito.Mockito.spy
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -66,7 +74,7 @@ class AuthenticationWithTokenStorageExpirationTest {
     private lateinit var path: String
     private lateinit var mockSessionExpiredEventHandler: SessionExpiredEventHandler
     private lateinit var fakeAuthenticationLocalStorage: FakeAuthenticationLocalStorage
-    private lateinit var fakeTokenExpirationStorage: TokenExpirationStorage
+    private lateinit var fakeTokenExpirationStorage: FakeTokenExpirationStorage
     private lateinit var mockWebServer: MockWebServer
     private lateinit var sut: AuthService
     private lateinit var testClock: TestClock
@@ -192,7 +200,7 @@ class AuthenticationWithTokenStorageExpirationTest {
      * THEN before it's sent, the refresh request is called and session is expired
      */
     @Test(timeout = 20000L)
-    fun sessionExpirationBecauseOfExpiration() {
+    fun sessionExpirationBecauseOfUnauthenticated() {
         val tokenType = "bearerx"
         val accessToken = "access"
         val refreshToken = "something"
@@ -240,6 +248,63 @@ class AuthenticationWithTokenStorageExpirationTest {
 
         Assert.assertFalse("Request should have failed!", response.isSuccessful)
         assertEquals(401, response.code())
+    }
+
+    @Test(timeout = 20000L)
+    fun sessionExpirationHandledWithoutDataRequest() {
+        val expirationTime = Long.MIN_VALUE
+        fakeAuthenticationLocalStorage.tokenType = "bear"
+        fakeAuthenticationLocalStorage.accessToken = "accessToken"
+        fakeAuthenticationLocalStorage.refreshToken = "something"
+        fakeTokenExpirationStorage.accessTokenExpiresAt = expirationTime
+
+        // session expired response
+        mockWebServer.enqueueRequest(400, AuthenticationWithoutTokenStorageTest.readJsonResourceFileToString("authentication_service/refresh_token_bad_token.json"))
+
+        val response = sut.sessionRelatedRequest().execute()
+
+        val refreshRequest = mockWebServer.takeRequest()
+
+        assertEquals("refresh_token=something&grant_type=refresh_token", refreshRequest.body.readUtf8())
+        assertEquals("POST", refreshRequest.method)
+        assertEquals("/${path}oauth/token", refreshRequest.requestUrl?.encodedPath)
+        assertEquals(1, fakeAuthenticationLocalStorage.clearCount)
+        assertEquals(1, fakeTokenExpirationStorage.clearCount)
+        verify(mockSessionExpiredEventHandler, times(1)).onSessionExpired()
+        verifyNoMoreInteractions(mockSessionExpiredEventHandler)
+
+        Assert.assertFalse("Request should have failed!", response.isSuccessful)
+        assertEquals(401, response.code())
+    }
+
+    @Test(timeout = 20000L)
+    fun sessionRefreshFailsLetsRequestRun() {
+        val expirationTime = Long.MIN_VALUE
+        fakeAuthenticationLocalStorage.tokenType = "bear"
+        fakeAuthenticationLocalStorage.accessToken = "accessToken"
+        fakeAuthenticationLocalStorage.refreshToken = "something"
+        fakeTokenExpirationStorage.accessTokenExpiresAt = expirationTime
+
+        // request error, no session expiration
+        mockWebServer.enqueueRequest(500, "{}")
+        mockWebServer.enqueueRequest(500, "{}")
+        mockWebServer.enqueueRequest(500, "{}")
+        // data request's response
+        mockWebServer.enqueueRequest(464, "{}")
+
+        val response = sut.sessionRelatedRequest().execute()
+
+        val refreshRequest1 = mockWebServer.takeRequest() // fail
+        val refreshRequest2 = mockWebServer.takeRequest() // fail
+        val refreshRequest3 = mockWebServer.takeRequest() // fail
+        val dataRequest = mockWebServer.takeRequest() // let run for proper error
+
+
+        assertEquals(0, fakeAuthenticationLocalStorage.clearCount)
+        assertEquals(0, fakeTokenExpirationStorage.clearCount)
+        verifyZeroInteractions(mockSessionExpiredEventHandler)
+
+        assertEquals(464, response.code())
     }
 
     /**

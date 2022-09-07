@@ -20,8 +20,10 @@ import com.halcyonmobile.core.ExampleRemoteSource
 import com.halcyonmobile.core.SessionExampleService
 import com.halcyonmobile.core.SessionlessExampleService
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
 import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthgson.OauthRetrofitContainerWithGson
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder

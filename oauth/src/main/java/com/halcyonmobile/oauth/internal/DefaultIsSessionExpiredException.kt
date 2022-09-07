@@ -27,7 +27,7 @@ import java.net.HttpURLConnection
  * Checks the [Throwable] against to most common session expiration
  * responses.
  */
-class DefaultIsSessionExpiredException : IsSessionExpiredException {
+open class DefaultIsSessionExpiredException : IsSessionExpiredException {
     override fun invoke(throwable: Throwable): Boolean {
         val httpException = throwable.causeHttpException ?: return false
         return httpException.isInvalidTokenException() || httpException.isExpiredTokenException()
