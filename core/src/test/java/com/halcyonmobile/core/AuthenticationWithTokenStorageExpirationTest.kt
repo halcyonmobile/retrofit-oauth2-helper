@@ -25,12 +25,15 @@ import com.halcyonmobile.oauth.INVALIDATION_AFTER_REFRESH_HEADER_VALUE
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import com.halcyonmobile.oauth.internal.Clock
+import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidation
+import com.halcyonmobile.oauth.runCatchingCausedByAuthFinishedInvalidationSuspend
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -329,13 +332,53 @@ class AuthenticationWithTokenStorageExpirationTest {
         }
     }
 
+    /**
+     * GIVEN failing request with expired_token and marked via header
+     * WHEN the refresh token succeeds
+     * THEN the request is failed with the specific exception
+     */
+    @Test(timeout = 20000L)
+    fun invalidatedRequestIsNotRetriedOnSessionFailure() {
+        fakeAuthenticationLocalStorage.refreshToken = "something"
+        fakeTokenExpirationStorage.accessTokenExpiresAt = Long.MIN_VALUE
+        mockWebServer.enqueueRequest(200, AuthenticationWithTokenStorageLocallyNotExpiredTest.readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
+        mockWebServer.enqueueRequest(200, "{}")
+
+        var wasCaught = false
+        runCatchingCausedByAuthFinishedInvalidation<Unit>({
+            sut.authInvalidTest().execute()
+        }, {
+            wasCaught = true
+        })
+
+        assertEquals("The specific exception wasn't shown", true, wasCaught)
+    }
+
+    /** GIVEN suspending failing request with expired_token and marked via header
+     * WHEN the refresh token succeeds
+     * THEN the request is failed with the specific exception
+     */
+    @Test(timeout = 20000L)
+    fun suspendInvalidatedRequestIsNotRetriedOnSessionFailure() = runBlocking<Unit> {
+        fakeAuthenticationLocalStorage.refreshToken = "something"
+        fakeTokenExpirationStorage.accessTokenExpiresAt = Long.MIN_VALUE
+        mockWebServer.enqueueRequest(200, AuthenticationWithTokenStorageLocallyNotExpiredTest.readJsonResourceFileToString("authentication_service/refresh_token_positive.json"))
+        mockWebServer.enqueueRequest(200, "{}")
+
+        var wasCaught = false
+        runCatchingCausedByAuthFinishedInvalidationSuspend({
+            sut.authInvalidTestSuspend()
+        }, {
+            wasCaught = true
+        })
+
+        assertEquals("The specific exception wasn't shown", true, wasCaught)
+    }
+
     interface AuthService {
 
         @GET("test/service")
         fun sessionRelatedRequest(): Call<Unit>
-
-        @GET("test/service2")
-        fun sessionRelatedRequest2(): Call<Unit>
 
         @GET("test/service")
         fun authInvalidTest(
