@@ -37,6 +37,7 @@ import kotlin.reflect.KClass
  *
  * @param clientId refers to the clientId header to attach for request which do not require session.
  * @param authenticationLocalStorage A persistent storage which stores the session related data.
+ * @param tokenExpirationStorage Optional persistent storage which stores the expiration time of session related data.
  * @param refreshServiceClass This will be used to create a retrofit service which will be called for refreshing the tokens.
  * @param adapter An adapter which creates an [AuthenticationService] from the given [refreshServiceClass] retrofit-service instance.
  * @param sessionExpiredEventHandler A callback for session expiration which means the session is no longer valid and can't be refreshed via tokens.

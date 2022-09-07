@@ -38,14 +38,17 @@ import retrofit2.HttpException
  * the request response is 401 - Unauthorized.
  *
  * @param refreshTokenService is used to run the token-refreshing
- *     request returning a [SessionDataResponse]
+ *     request returning a [SessionDataResponse][com.halcyonmobile.oauth.SessionDataResponse]
  * @param authenticationLocalStorage the persistent storage for the
- *     session [SessionDataResponse]
+ *     session [SessionDataResponse][com.halcyonmobile.oauth.SessionDataResponse]
  * @param setAuthorizationHeader an internal use-case which adds the
  *     authorization header to the request based on the stored session.
  * @param isSessionExpiredException the component defining if an
  *     exception can be considered SessionExpired exception.
  * @param sessionExpiredEventHandler a listener for session expiration.
+ * @param tokenExpirationStorage the persistent storage for the
+ *     [SessionDataResponse.expiresInSeconds][com.halcyonmobile.oauth.SessionDataResponse.expiresInSeconds]
+ *     optional parameter
  */
 internal class Authenticator(
     private val refreshTokenService: AuthenticationService,
@@ -58,10 +61,13 @@ internal class Authenticator(
 ) : Authenticator {
 
     @Throws(IOException::class)
-    override fun authenticate(route: Route?, response: Response): Request? = authenticate(response.request).request
+    override fun authenticate(route: Route?, response: Response): Request? {
+        return authenticate(response.request).request
+    }
 
     @Throws(IOException::class)
     fun authenticate(request: Request): RefreshState {
+        System.err.println("MYLOG: authenticate")
         synchronized(this) {
             if (!setAuthorizationHeader.isSame(request)) {
                 return RefreshState.SessionRefreshed(setAuthorizationHeader(request))

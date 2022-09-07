@@ -20,9 +20,7 @@ internal class TokenExpirationInterceptor(
         val tokenExpiration = tokenExpirationStorage.accessTokenExpiresAt
         return if (tokenExpiration < clock.currentTimeMillis()) {
             val request = chain.request()
-            val updatedRequest = refreshTokenForRequest(request)
-                ?: return sessionExpirationErrorResponse(request)
-            // TODO: wrong error returned, what if it wouldn't be 401, but unknown host or similar?
+            val updatedRequest = refreshTokenForRequest(request) ?: return sessionExpirationErrorResponse(request)
             chain.proceed(updatedRequest)
         } else {
             chain.proceed(chain.request())
