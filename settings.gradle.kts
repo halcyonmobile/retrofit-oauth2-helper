@@ -10,6 +10,6 @@ include(
     ":oauthgson",
     ":oauthparsing",
     ":oauthsecurestorage",
-    ":oauthsecurestoragecompat"
+    ":oauthsecurestoragecompat",
+    ":dependenciestest"
 )
-include(":dependenciestest")
