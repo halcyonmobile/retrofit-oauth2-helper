@@ -28,5 +28,6 @@ data class RefreshTokenResponse(
     @Json(name = "user_id") override val userId: String,
     @Json(name = "access_token") override val token: String,
     @Json(name = "refresh_token") override val refreshToken: String,
-    @Json(name = "token_type") override val tokenType: String
+    @Json(name = "token_type") override val tokenType: String,
+    @Json(name = "expires_in") override val expiresInSeconds: Long?
 ) : SessionDataResponse

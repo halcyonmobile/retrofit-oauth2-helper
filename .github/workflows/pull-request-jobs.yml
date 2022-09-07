@@ -26,3 +26,7 @@ jobs:
         run: ./gradlew testReleaseUnit
       - name: Run Core Unit Tests
         run: ./gradlew core:test
+      - name: Run GsonBuilder Unit Tests
+        run: ./gradlew oauthgson:test
+      - name: Run MoshiBuilder Unit Tests
+        run: ./gradlew oauthmoshi:test

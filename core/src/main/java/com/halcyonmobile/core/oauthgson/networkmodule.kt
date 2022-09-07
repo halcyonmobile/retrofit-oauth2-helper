@@ -20,11 +20,16 @@ import com.halcyonmobile.core.ExampleRemoteSource
 import com.halcyonmobile.core.SessionExampleService
 import com.halcyonmobile.core.SessionlessExampleService
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.DefaultIsSessionExpiredException
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthgson.OauthRetrofitContainerWithGson
 import com.halcyonmobile.oauthgson.OauthRetrofitWithGsonContainerBuilder
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
+import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.core.module.Module
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
@@ -38,7 +43,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: (Scope.() -> TokenExpirationStorage) = { NeverExpiredTokenExpirationStorage() }
 ): List<Module> {
     return listOf(
         module {
@@ -47,16 +53,21 @@ fun createNetworkModules(
             factory { ExampleRemoteSource(get(), get()) }
         },
         module {
+            single { provideTokenExpirationStorage() }
             single { provideAuthenticationLocalStorage() }
             single { provideSessionExpiredEventHandler() }
             single {
                 OauthRetrofitWithGsonContainerBuilder(
                     clientId = clientId,
-                    authenticationLocalStorage = provideAuthenticationLocalStorage(),
-                    sessionExpiredEventHandler = provideSessionExpiredEventHandler()
+                    authenticationLocalStorage = get(),
+                    sessionExpiredEventHandler = get(),
+                    tokenExpirationStorage = get()
                 )
                     .configureRetrofit {
                         baseUrl(baseUrl)
+                    }
+                    .configureBothOkHttpClient {
+                        addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
                     }
                     .build()
             }

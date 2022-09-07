@@ -24,6 +24,7 @@ import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
 class SessionExpiredEventHandlerImpl(private val context: Context) : SessionExpiredEventHandler {
     override fun onSessionExpired() {
         Handler(Looper.getMainLooper()).post {
+            System.err.println("SESSION EXPIRATION!")
             // todo navigate to sign in
         }
     }

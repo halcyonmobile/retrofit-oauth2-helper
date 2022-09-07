@@ -20,11 +20,13 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.halcyonmobile.core.ExampleRemoteSource
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 import org.koin.android.ext.android.inject
 
 class MainActivity : AppCompatActivity() {
 
     private val authenticationLocalStorage by inject<AuthenticationLocalStorage>()
+    private val tokenExpirationStorage by inject<TokenExpirationStorage>()
     private val exampleRemoteSource by inject<ExampleRemoteSource>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         authenticationLocalStorage.accessToken = "accessToken"
         authenticationLocalStorage.refreshToken = "accessToken"
         authenticationLocalStorage.userId = "1234"
+        tokenExpirationStorage.accessTokenExpiresAt = Long.MIN_VALUE
         exampleRemoteSource.nonsession(object : ExampleRemoteSource.Callback {
             override fun success() = runSessionService()
             override fun error() = runSessionService()

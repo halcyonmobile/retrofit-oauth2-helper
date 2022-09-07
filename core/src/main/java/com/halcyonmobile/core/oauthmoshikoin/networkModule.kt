@@ -21,6 +21,8 @@ import com.halcyonmobile.core.SessionExampleService
 import com.halcyonmobile.core.SessionlessExampleService
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthmoshikoin.NON_SESSION_RETROFIT
 import com.halcyonmobile.oauthmoshikoin.SESSION_RETROFIT
 import com.halcyonmobile.oauthmoshikoin.createOauthModule
@@ -37,7 +39,8 @@ fun createNetworkModules(
     clientId: String,
     baseUrl: String,
     provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
-    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler
+    provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() }
 ): List<Module> {
     return listOf(
         module {
@@ -49,6 +52,7 @@ fun createNetworkModules(
             clientId = clientId,
             provideSessionExpiredEventHandler = provideSessionExpiredEventHandler,
             provideAuthenticationLocalStorage = provideAuthenticationLocalStorage,
+            provideTokenExpirationStorage = provideTokenExpirationStorage,
             configureRetrofit = {
                 it.baseUrl(baseUrl)
             }

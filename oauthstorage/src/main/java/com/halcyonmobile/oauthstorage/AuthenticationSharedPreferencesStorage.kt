@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.CallSuper
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
 
 /**
  * [SharedPreferences] based implementation of [AuthenticationLocalStorage].

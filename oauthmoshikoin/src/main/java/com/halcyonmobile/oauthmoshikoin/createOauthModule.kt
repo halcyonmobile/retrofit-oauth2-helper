@@ -19,6 +19,8 @@ package com.halcyonmobile.oauthmoshikoin
 import com.halcyonmobile.oauth.dependencies.AuthenticationLocalStorage
 import com.halcyonmobile.oauth.dependencies.IsSessionExpiredException
 import com.halcyonmobile.oauth.dependencies.SessionExpiredEventHandler
+import com.halcyonmobile.oauth.dependencies.TokenExpirationStorage
+import com.halcyonmobile.oauth.internal.NeverExpiredTokenExpirationStorage
 import com.halcyonmobile.oauthmoshi.OauthRetrofitContainerWithMoshi
 import com.halcyonmobile.oauthmoshi.OauthRetrofitWithMoshiContainerBuilder
 import com.halcyonmobile.oauthparsing.RefreshServiceFieldParameterProvider
@@ -55,6 +57,7 @@ inline fun createOauthModule(
     clientId: String,
     crossinline provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
     crossinline provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
+    crossinline provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() },
     crossinline configureRetrofit: Scope.(Retrofit.Builder) -> Retrofit.Builder,
     disableDefaultParsing: Boolean = false,
     refreshServicePath: String? = null,
@@ -70,6 +73,7 @@ inline fun createOauthModule(
     createOauthModule(
         provideClientId = { clientId},
         provideAuthenticationLocalStorage = provideAuthenticationLocalStorage,
+        provideTokenExpirationStorage = provideTokenExpirationStorage,
         provideIsSessionExpiredException = provideIsSessionExpiredException,
         configureRetrofit = configureRetrofit,
         disableDefaultParsing = disableDefaultParsing,
@@ -107,6 +111,7 @@ inline fun createOauthModule(
 inline fun createOauthModule(
     crossinline provideClientId: Scope.() -> String,
     crossinline provideAuthenticationLocalStorage: Scope.() -> AuthenticationLocalStorage,
+    crossinline provideTokenExpirationStorage: Scope.() -> TokenExpirationStorage = { NeverExpiredTokenExpirationStorage() },
     crossinline provideSessionExpiredEventHandler: Scope.() -> SessionExpiredEventHandler,
     crossinline configureRetrofit: Scope.(Retrofit.Builder) -> Retrofit.Builder,
     disableDefaultParsing: Boolean = false,
@@ -120,6 +125,7 @@ inline fun createOauthModule(
     crossinline configureMoshi: Scope.(Moshi.Builder) -> Moshi.Builder = { it },
     noinline provideIsSessionExpiredException: (Scope.() -> IsSessionExpiredException)? = null
 ): Module = module {
+    single { provideTokenExpirationStorage() }
     single { provideAuthenticationLocalStorage() }
     single { provideSessionExpiredEventHandler() }
 
@@ -127,7 +133,8 @@ inline fun createOauthModule(
         OauthRetrofitWithMoshiContainerBuilder(
             clientId = provideClientId(),
             authenticationLocalStorage = get(),
-            sessionExpiredEventHandler = get()
+            sessionExpiredEventHandler = get(),
+            tokenExpirationStorage = get()
         )
             .let { if (refreshServicePath == null) it else it.setRefreshServicePath(refreshServicePath) }
             .let { if (refreshTokenFieldName == null) it else it.setRefreshTokenFieldName(refreshTokenFieldName) }

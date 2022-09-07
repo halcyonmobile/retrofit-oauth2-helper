@@ -27,7 +27,7 @@ class ExampleApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        startKoin{
+        startKoin {
             androidContext(this@ExampleApplication)
             modules(createModules())
         }
@@ -36,14 +36,16 @@ class ExampleApplication : Application() {
     fun createModules(): List<Module> =
         listOf(
             module {
-                single { SharedPreferencesManager(get(), encrypted = false, compat = true) }
+                single { SharedPreferencesManager(context = get(), type = SharedPreferencesManager.Type.WITH_TOKEN_EXPIRATION, variant = SharedPreferencesManager.Variant.COMPAT) }
             }
         )
             .plus(
                 createNetworkModules(
-                clientId = "CLIENT-ID",
-                baseUrl = "https://google.com/",
-                provideAuthenticationLocalStorage = { get<SharedPreferencesManager>() },
-                provideSessionExpiredEventHandler = { SessionExpiredEventHandlerImpl(get()) }
-            ))
+                    clientId = "CLIENT-ID",
+                    baseUrl = "https://google.com/",
+                    provideAuthenticationLocalStorage = { get<SharedPreferencesManager>() },
+                    provideSessionExpiredEventHandler = { SessionExpiredEventHandlerImpl(get()) },
+                    provideTokenExpirationStorage = { get<SharedPreferencesManager>() },
+                )
+            )
 }

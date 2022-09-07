@@ -31,6 +31,8 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
 
+    testImplementation project(":dependenciestest")
+
     // compatibility
     testImplementation "com.halcyonmobile.retrofit-error-parsing:retrofit-error-parsing:2.0.1"
     // incompatible with error-parsing 2.0.0,

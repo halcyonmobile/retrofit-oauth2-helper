@@ -43,7 +43,8 @@ class RefreshTokenResponseWrapper {
                 userId = sessionDataResponse.userId,
                 refreshToken = sessionDataResponse.refreshToken,
                 token = sessionDataResponse.token,
-                tokenType = sessionDataResponse.tokenType
+                tokenType = sessionDataResponse.tokenType,
+                expiresInSeconds = sessionDataResponse.expiresInSeconds
             )
         }
         delegate.toJson(jsonWriter, refreshTokenResponse)
