@@ -10,7 +10,7 @@ buildscript {
         gsonVersion = "2.8.9"
         junitVersion = "4.13.2"
         koinVersion = "3.1.5"
-        kotlinVersion = "1.6.10"
+        kotlinVersion = "1.6.21"
         kotlinPoetVersion = "1.10.2"
         moshiVersion = "1.13.0"
         okHttpVersion = "4.9.3"
@@ -34,7 +34,7 @@ buildscript {
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.1.2"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.21"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.24.14"
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
         classpath "com.halcyonmobile.publish.custom:java-and-aar:2.2.0"
