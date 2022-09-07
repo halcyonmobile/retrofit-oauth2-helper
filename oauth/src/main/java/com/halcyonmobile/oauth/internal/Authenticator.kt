@@ -97,11 +97,10 @@ internal class Authenticator(
                             }
                         }
                     }
-//                    throwable.printStackTrace()
                 }
             }
 
-            // return the request with 401 error since the refresh token failed 3 times.
+            // return the request (null) with 401 error since the refresh token failed 3 times.
             return RefreshState.SessionRefreshFailed()
         }
     }
