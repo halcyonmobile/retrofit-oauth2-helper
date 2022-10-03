@@ -32,7 +32,7 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:7.1.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.24.14"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.29.1"
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
         classpath "com.halcyonmobile.publish.custom:java-and-aar:2.2.0"
     }
