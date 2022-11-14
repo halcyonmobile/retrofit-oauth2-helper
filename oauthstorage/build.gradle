@@ -32,7 +32,7 @@ dependencies {
     api project(':oauthdependencies')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 }
 project.ext.set("libraryArtifactId", "oauth-setup-storage")
 apply plugin: 'com.halcyonmobile.plugin.publish.custom.aar-library'
