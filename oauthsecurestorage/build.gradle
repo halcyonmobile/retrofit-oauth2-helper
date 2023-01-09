@@ -33,7 +33,7 @@ dependencies {
     api project(':oauthstorage')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation "androidx.security:security-crypto:$securityVersion"
 }
 project.ext.set("libraryArtifactId", "oauth-setup-secure-storage")
